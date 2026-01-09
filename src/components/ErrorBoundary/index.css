@@ -1,0 +1,8 @@
+.error-boundary {
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.error-boundary .ant-result {
+  padding: var(--spacing-xl);
+}

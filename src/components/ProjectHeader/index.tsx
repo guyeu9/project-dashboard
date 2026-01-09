@@ -1,18 +1,25 @@
 import { useState } from 'react'
-import { Card, Row, Col, Tag, Input, Space, Modal, message, Button } from 'antd'
-import { EditOutlined, LinkOutlined, UserOutlined, TeamOutlined, FileTextOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Tag, Input, Space, Modal, message, Button, Select } from 'antd'
+import { EditOutlined, LinkOutlined, UserOutlined, TeamOutlined, FileTextOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { Project } from '../../types'
 import './index.css'
+
+const { Option } = Select
 
 const { TextArea } = Input
 
 interface ProjectHeaderProps {
   project: Project
+  riskStatus: 'normal' | 'risk' | 'delayed'
+  onRiskStatusChange: (status: 'normal' | 'risk' | 'delayed') => void
+  onProjectUpdate: (field: string, value: any) => void
 }
 
-function ProjectHeader({ project }: ProjectHeaderProps) {
+function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdate }: ProjectHeaderProps) {
   const [editingName, setEditingName] = useState(false)
   const [projectName, setProjectName] = useState(project.name)
+  const [editingField, setEditingField] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
   const [remarkModalVisible, setRemarkModalVisible] = useState(false)
   const [remark, setRemark] = useState(project.remark || '')
 
@@ -30,8 +37,28 @@ function ProjectHeader({ project }: ProjectHeaderProps) {
     setEditingName(false)
   }
 
-  const handleRemarkView = () => {
-    setRemarkModalVisible(true)
+  const handleFieldEdit = (field: string, currentValue: string) => {
+    setEditingField(field)
+    setEditValue(currentValue)
+  }
+
+  const handleFieldSave = () => {
+    let value: any = editValue
+    
+    // 处理数组类型的字段
+    if (editingField === 'partners' || editingField === 'developers' || editingField === 'testers') {
+      value = editValue.split(',').map((item: string) => item.trim()).filter((item: string) => item)
+    }
+    
+    onProjectUpdate(editingField!, value)
+    setEditingField(null)
+    setEditValue('')
+    message.success('字段已更新')
+  }
+
+  const handleFieldCancel = () => {
+    setEditingField(null)
+    setEditValue('')
   }
 
   const handleRemarkSave = () => {
@@ -75,58 +102,172 @@ function ProjectHeader({ project }: ProjectHeaderProps) {
           </div>
         </Col>
 
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8} lg={8}>
           <div className="info-section">
             <div className="info-label">
               <UserOutlined /> 合作方
             </div>
             <div className="info-value">
-              {project.partners.map((partner: string, index: number) => (
-                <Tag key={index} color="blue" style={{ margin: '4px 4px 0 0' }}>
-                  {partner}
-                </Tag>
-              ))}
+              {editingField === 'partners' ? (
+                <Space>
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder="请输入合作方，用逗号分隔"
+                    style={{ width: '100%' }}
+                  />
+                  <Button type="primary" size="small" onClick={handleFieldSave}>
+                    保存
+                  </Button>
+                  <Button size="small" onClick={handleFieldCancel}>
+                    取消
+                  </Button>
+                </Space>
+              ) : (
+                <div onClick={() => handleFieldEdit('partners', project.partners.join(','))} style={{ cursor: 'pointer' }}>
+                  {project.partners.map((partner: string, index: number) => (
+                    <Tag key={index} color="blue" style={{ margin: '4px 4px 0 0' }}>
+                      {partner}
+                    </Tag>
+                  ))}
+                  <Button type="link" size="small" icon={<EditOutlined />}>
+                    编辑
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </Col>
 
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8} lg={8}>
           <div className="info-section">
             <div className="info-label">
               <TeamOutlined /> 开发人员
             </div>
             <div className="info-value">
-              {project.developers.map((dev: string, index: number) => (
-                <Tag key={index} color="green" style={{ margin: '4px 4px 0 0' }}>
-                  {dev}
-                </Tag>
-              ))}
+              {editingField === 'developers' ? (
+                <Space>
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder="请输入开发人员，用逗号分隔"
+                    style={{ width: '100%' }}
+                  />
+                  <Button type="primary" size="small" onClick={handleFieldSave}>
+                    保存
+                  </Button>
+                  <Button size="small" onClick={handleFieldCancel}>
+                    取消
+                  </Button>
+                </Space>
+              ) : (
+                <div onClick={() => handleFieldEdit('developers', project.developers.join(','))} style={{ cursor: 'pointer' }}>
+                  {project.developers.map((dev: string, index: number) => (
+                    <Tag key={index} color="green" style={{ margin: '4px 4px 0 0' }}>
+                      {dev}
+                    </Tag>
+                  ))}
+                  <Button type="link" size="small" icon={<EditOutlined />}>
+                    编辑
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </Col>
 
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8} lg={8}>
           <div className="info-section">
             <div className="info-label">
               <TeamOutlined /> 测试人员
             </div>
             <div className="info-value">
-              {project.testers.map((tester: string, index: number) => (
-                <Tag key={index} color="orange" style={{ margin: '4px 4px 0 0' }}>
-                  {tester}
-                </Tag>
-              ))}
+              {editingField === 'testers' ? (
+                <Space>
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder="请输入测试人员，用逗号分隔"
+                    style={{ width: '100%' }}
+                  />
+                  <Button type="primary" size="small" onClick={handleFieldSave}>
+                    保存
+                  </Button>
+                  <Button size="small" onClick={handleFieldCancel}>
+                    取消
+                  </Button>
+                </Space>
+              ) : (
+                <div onClick={() => handleFieldEdit('testers', project.testers.join(','))} style={{ cursor: 'pointer' }}>
+                  {project.testers.map((tester: string, index: number) => (
+                    <Tag key={index} color="orange" style={{ margin: '4px 4px 0 0' }}>
+                      {tester}
+                    </Tag>
+                  ))}
+                  <Button type="link" size="small" icon={<EditOutlined />}>
+                    编辑
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </Col>
 
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8} lg={8}>
           <div className="info-section">
             <div className="info-label">
               <UserOutlined /> 负责人
             </div>
             <div className="info-value">
-              <Tag color="purple">{project.owner}</Tag>
+              {editingField === 'owner' ? (
+                <Space>
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder="请输入负责人"
+                    style={{ width: '100%' }}
+                  />
+                  <Button type="primary" size="small" onClick={handleFieldSave}>
+                    保存
+                  </Button>
+                  <Button size="small" onClick={handleFieldCancel}>
+                    取消
+                  </Button>
+                </Space>
+              ) : (
+                <div onClick={() => handleFieldEdit('owner', project.owner)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                  <Tag color="purple">{project.owner}</Tag>
+                  <Button type="link" size="small" icon={<EditOutlined />}>
+                    编辑
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} md={8} lg={8}>
+          <div className="info-section">
+            <div className="info-label">
+              <ExclamationCircleOutlined /> 项目风险
+            </div>
+            <div className="info-value">
+              <Select
+                value={riskStatus}
+                onChange={onRiskStatusChange}
+                style={{ width: '100%' }}
+                size="small"
+              >
+                <Option value="normal">
+                  <Tag color="green">正常</Tag>
+                </Option>
+                <Option value="risk">
+                  <Tag color="orange">风险</Tag>
+                </Option>
+                <Option value="delayed">
+                  <Tag color="red">延期</Tag>
+                </Option>
+              </Select>
             </div>
           </div>
         </Col>
@@ -178,18 +319,49 @@ function ProjectHeader({ project }: ProjectHeaderProps) {
           </div>
         </Col>
 
-        <Col span={24}>
+        <Col xs={24} sm={24} md={24} lg={24}>
           <div className="info-section">
             <div className="info-label">
               <FileTextOutlined /> 备注
             </div>
             <div className="info-value">
-              {project.remark ? (
-                <Button type="link" onClick={handleRemarkView}>
-                  查看备注
-                </Button>
+              {editingField === 'remark' ? (
+                <Space>
+                  <TextArea
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder="请输入项目备注信息"
+                    autoSize={{ minRows: 2, maxRows: 4 }}
+                    style={{ width: '100%' }}
+                  />
+                  <Button type="primary" size="small" onClick={handleFieldSave}>
+                    保存
+                  </Button>
+                  <Button size="small" onClick={handleFieldCancel}>
+                    取消
+                  </Button>
+                </Space>
               ) : (
-                <span className="empty-value">暂无备注</span>
+                <div onClick={() => handleFieldEdit('remark', project.remark || '')} style={{ cursor: 'pointer' }}>
+                  {project.remark ? (
+                    <div style={{ 
+                      backgroundColor: '#f5f5f5', 
+                      padding: '8px 12px', 
+                      borderRadius: '6px',
+                      border: '1px solid #d9d9d9',
+                      fontSize: '14px',
+                      lineHeight: '1.5',
+                      whiteSpace: 'pre-wrap'
+                    }}>
+                      {project.remark}
+                    </div>
+                  ) : (
+                    <span className="empty-value">暂无备注，点击添加</span>
+                  )}
+                  <Button type="link" size="small" icon={<EditOutlined />}>
+                    编辑
+                  </Button>
+                </div>
               )}
             </div>
           </div>

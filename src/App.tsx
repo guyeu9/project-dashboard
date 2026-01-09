@@ -5,6 +5,7 @@ import ProjectDetail from './pages/ProjectDetail'
 import DataManagement from './pages/DataManagement'
 import ResourceSchedule from './pages/ResourceSchedule'
 import ProjectManagement from './pages/ProjectManagement'
+import SmartParserPage from './pages/SmartParser'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/project/:id" element={<ProjectDetail />} />
+          <Route path="/smart-parser" element={<SmartParserPage />} />
           <Route path="/data-management" element={<DataManagement />} />
           <Route path="/resource-schedule" element={<ResourceSchedule />} />
           <Route path="/project-management" element={<ProjectManagement />} />

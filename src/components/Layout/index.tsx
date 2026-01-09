@@ -7,7 +7,8 @@ import {
   SettingOutlined,
   TeamOutlined,
   ProjectOutlined,
-  UserOutlined
+  UserOutlined,
+  FileTextOutlined
 } from '@ant-design/icons'
 import { useEffect } from 'react'
 import NotificationDropdown from '../NotificationDropdown'
@@ -38,6 +39,11 @@ function Layout({ children }: { children: React.ReactNode }) {
       key: '/resource-schedule',
       icon: <TeamOutlined />,
       label: '资源排期',
+    },
+    {
+      key: '/smart-parser',
+      icon: <FileTextOutlined />,
+      label: '智能解析',
     },
     {
       key: '/data-management',
@@ -72,6 +78,8 @@ function Layout({ children }: { children: React.ReactNode }) {
         return '项目进度'
       case '/resource-schedule':
         return '资源排期'
+      case '/smart-parser':
+        return '智能解析'
       case '/data-management':
         return '数据管理'
       default:
@@ -174,10 +182,13 @@ function Layout({ children }: { children: React.ReactNode }) {
           height: 'var(--header-height)'
         }}>
           <div>
-            <Breadcrumb style={{ margin: 'var(--spacing-sm) 0' }}>
-              <Breadcrumb.Item>首页</Breadcrumb.Item>
-              <Breadcrumb.Item>{getPageTitle()}</Breadcrumb.Item>
-            </Breadcrumb>
+            <Breadcrumb 
+              style={{ margin: 'var(--spacing-sm) 0' }}
+              items={[
+                { title: '首页' },
+                { title: getPageTitle() }
+              ]}
+            />
             <h1 style={{ 
               margin: 0, 
               color: 'var(--gray-800)', 

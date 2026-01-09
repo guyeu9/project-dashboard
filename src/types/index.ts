@@ -12,6 +12,10 @@ export interface Project {
   remark?: string
   chatGroupLinks?: string[]
   contacts?: Contact[]
+  // 新增字段
+  productManager?: string
+  pmo?: string
+  dailyProgress?: DailyProgress[]  // 每日进度记录
 }
 
 export interface Contact {
@@ -32,6 +36,8 @@ export interface Task {
   assignees: string[]
   dailyProgress?: string
   remark?: string
+  // 新增字段
+  dailyRecords?: DailyTaskRecord[]
 }
 
 export interface TaskType {
@@ -54,6 +60,23 @@ export interface TaskHistory {
   modifiedBy: string
   modifiedAt: string
   changes: Record<string, { from: unknown; to: unknown }>
+}
+
+export interface DailyProgress {
+  date: string
+  progress: number
+  status: 'normal' | 'risk' | 'delayed'
+  content: string
+  taskType: 'development' | 'testing' | 'uat' | 'deployment'
+  assignees: string[]
+}
+
+export interface DailyTaskRecord {
+  date: string
+  progress: number
+  status: 'normal' | 'risk' | 'delayed'
+  content: string
+  assignees: string[]
 }
 
 export type NotificationStatus = 'pending' | 'confirmed'

@@ -26,62 +26,70 @@ function SmartParser() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('1')
 
   const parseText = (text: string): ParsedTask[] => {
-    const tasks: ParsedTask[] = []
-    const lines = text.split('\n').filter(line => line.trim())
-    
-    let currentTask: Partial<ParsedTask> = {}
-    
-    for (const line of lines) {
-      const phaseMatch = line.match(/^(开发排期|开发联调|测试排期|测试联调|产品UAT|上线)/)
-      const dateMatch = line.match(/(\d{1,2}\.\d{1,2})-(\d{1,2}\.\d{1,2})/)
-      const assigneeMatches = line.match(/@([^\s]+)/g)
+    try {
+      const tasks: ParsedTask[] = []
+      const lines = text.split('\n').filter(line => line.trim())
       
-      if (phaseMatch) {
-        if (Object.keys(currentTask).length > 0) {
-      tasks.push({
-        ...currentTask as ParsedTask,
-        id: `task-${Date.now()}-${tasks.length}`,
-      })
-    }
+      let currentTask: Partial<ParsedTask> = {}
+      
+      for (const line of lines) {
+        const phaseMatch = line.match(/^(开发排期|开发联调|测试排期|测试联调|产品UAT|上线)/)
+        const dateMatch = line.match(/(\d{1,2}\.\d{1,2})-(\d{1,2}\.\d{1,2})/)
+        const assigneeMatches = line.match(/@([^\s]+)/g)
         
-        currentTask = {
-          phase: phaseMatch[1],
-        }
-        
-        if (dateMatch) {
-          const [startMonth, startDay] = dateMatch[1].split('.')
-          const [endMonth, endDay] = dateMatch[2].split('.')
+        if (phaseMatch) {
+          if (Object.keys(currentTask).length > 0) {
+            tasks.push({
+              ...currentTask as ParsedTask,
+              id: `task-${Date.now()}-${tasks.length}`,
+            })
+          }
           
-          const currentYear = dayjs().year()
-          const startYear = parseInt(startMonth) > parseInt(endMonth) ? currentYear - 1 : currentYear
-          const endYear = parseInt(endMonth) < parseInt(startMonth) ? currentYear + 1 : currentYear
+          currentTask = {
+            phase: phaseMatch[1],
+          }
           
-          currentTask.startDate = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`
-          currentTask.endDate = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`
-        }
-        
-        if (assigneeMatches) {
-          currentTask.assignees = assigneeMatches.map(match => {
-            const name = match[1].split('-')[0].trim()
-            return name
-          })
-        }
-        
-        const remarkMatch = line.match(/（([^)]*)）/)
-        if (remarkMatch) {
-          currentTask.remark = remarkMatch[1]
+          if (dateMatch) {
+            const [startMonth, startDay] = dateMatch[1].split('.')
+            const [endMonth, endDay] = dateMatch[2].split('.')
+            
+            const currentYear = dayjs().year()
+            const startYear = parseInt(startMonth) > parseInt(endMonth) ? currentYear - 1 : currentYear
+            const endYear = parseInt(endMonth) < parseInt(startMonth) ? currentYear + 1 : currentYear
+            
+            currentTask.startDate = `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`
+            currentTask.endDate = `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`
+          }
+          
+          if (assigneeMatches) {
+            currentTask.assignees = assigneeMatches.map(match => {
+              const name = match.replace('@', '').split('-')[0].trim()
+              return name
+            })
+          } else {
+            currentTask.assignees = []
+          }
+          
+          const remarkMatch = line.match(/（([^)]*)）/)
+          if (remarkMatch) {
+            currentTask.remark = remarkMatch[1]
+          }
         }
       }
+      
+      if (Object.keys(currentTask).length > 0) {
+        tasks.push({
+          ...currentTask as ParsedTask,
+          id: `task-${Date.now()}-${tasks.length}`,
+        })
+      }
+      
+      return tasks
+    } catch (error) {
+      console.error('解析文本时出错:', error)
+      message.error('解析文本失败，请检查输入格式')
+      return []
     }
-    
-    if (Object.keys(currentTask).length > 0) {
-      tasks.push({
-        ...currentTask as ParsedTask,
-        id: `task-${Date.now()}-${tasks.length}`,
-      })
-    }
-    
-    return tasks
   }
 
   const handleParse = () => {
@@ -110,6 +118,11 @@ function SmartParser() {
   }
 
   const handleConfirmImport = () => {
+    if (!taskTypes || taskTypes.length === 0) {
+      message.error('任务类型数据未加载，请刷新页面重试')
+      return
+    }
+    
     const tasksToAdd: Task[] = parsedTasks.map((parsedTask, index) => {
       const taskType = taskTypes.find(t => t.name === parsedTask.phase) || taskTypes[0] 
       
@@ -174,11 +187,11 @@ function SmartParser() {
       dataIndex: 'assignees',
       key: 'assignees',
       width: 200,
-      render: (assignees: string[]) => (
+      render: (assignees?: string[]) => (
         <Space size="small" wrap>
-          {assignees.map((name, index) => (
+          {assignees?.map((name, index) => (
             <Tag key={index} color="geekblue">{name}</Tag>
-          ))}
+          )) || '-'}
         </Space>
       ),
     },
@@ -280,6 +293,9 @@ function SmartParser() {
               pagination={false}
               scroll={{ y: 400 }}
               className="preview-table"
+              locale={{
+                emptyText: '暂无解析结果，请输入文本并点击解析按钮'
+              }}
             />
           </div>
         )}

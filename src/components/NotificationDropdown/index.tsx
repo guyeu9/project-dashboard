@@ -29,6 +29,20 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notificatio
           animation: 'fadeIn 0.3s ease'
         }}
       >
+        <style>
+          {`
+            @keyframes fadeIn {
+              from {
+                opacity: 0;
+                transform: translateY(-10px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}
+        </style>
         <div style={{
           padding: '12px 16px',
           fontWeight: '500',
@@ -58,30 +72,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notificatio
   
   return (
     <Dropdown
-      overlay={renderDropdownContent}
+      menu={{ items: [] }}
       trigger={['click']}
       placement="bottomRight"
       arrow
       autoAdjustOverflow
-      dropdownRender={(menu) => (
-        <div>
-          {menu}
-          <style>
-            {`
-              @keyframes fadeIn {
-                from {
-                  opacity: 0;
-                  transform: translateY(-10px);
-                }
-                to {
-                  opacity: 1;
-                  transform: translateY(0);
-                }
-              }
-            `}
-          </style>
-        </div>
-      )}
+      popupRender={() => renderDropdownContent()}
     >
       <div
         style={{

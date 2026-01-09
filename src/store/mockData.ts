@@ -12,6 +12,8 @@ export const mockProjects: Project[] = [
     developers: ['张三', '李四'],
     testers: ['王五', '赵六'],
     owner: '项目经理A',
+    productManager: '产品经理A',
+    pmo: 'PMO-A',
     remark: '重点项目，需按时上线',
   },
   {
@@ -25,6 +27,8 @@ export const mockProjects: Project[] = [
     developers: ['王靖博', '邓晓旭'],
     testers: ['史宁博'],
     owner: '项目经理B',
+    productManager: '产品经理B',
+    pmo: 'PMO-B',
     remark: '存在技术难点，需要协调资源',
   },
   {
@@ -38,6 +42,8 @@ export const mockProjects: Project[] = [
     developers: ['陈七', '周八'],
     testers: ['吴九', '郑十'],
     owner: '项目经理C',
+    productManager: '产品经理C',
+    pmo: 'PMO-C',
     remark: '依赖外部接口，存在风险',
   },
   {
@@ -51,6 +57,8 @@ export const mockProjects: Project[] = [
     developers: ['孙十一'],
     testers: ['钱十二'],
     owner: '项目经理D',
+    productManager: '产品经理D',
+    pmo: 'PMO-D',
   },
   {
     id: '5',
@@ -63,5 +71,7 @@ export const mockProjects: Project[] = [
     developers: ['李十三'],
     testers: ['王十四'],
     owner: '项目经理E',
+    productManager: '产品经理E',
+    pmo: 'PMO-E',
   },
 ]

@@ -28,6 +28,8 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
         startDate: dayjs(project.startDate),
         endDate: dayjs(project.endDate),
         owner: project.owner,
+        pmo: project.pmo || '',
+        productManager: project.productManager || '',
         partners: project.partners,
         developers: project.developers,
         testers: project.testers,
@@ -49,6 +51,8 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
         startDate: values.startDate.format('YYYY-MM-DD'),
         endDate: values.endDate.format('YYYY-MM-DD'),
         owner: values.owner,
+        pmo: values.pmo,
+        productManager: values.productManager,
         partners: values.partners,
         developers: values.developers,
         testers: values.testers,
@@ -148,6 +152,20 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
           rules={[{ required: true, message: '请输入负责人' }]}
         >
           <Input placeholder="请输入负责人" />
+        </Form.Item>
+
+        <Form.Item
+          label="PMO"
+          name="pmo"
+        >
+          <Input placeholder="请输入PMO负责人" />
+        </Form.Item>
+
+        <Form.Item
+          label="产品经理"
+          name="productManager"
+        >
+          <Input placeholder="请输入产品经理" />
         </Form.Item>
 
         <Form.Item

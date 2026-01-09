@@ -49,6 +49,85 @@
   font-style: italic;
 }
 
+/* 移动端响应式样式 */
+@media (max-width: 768px) {
+  .project-name {
+    font-size: 20px;
+  }
+  
+  .info-section {
+    padding: 8px 0;
+  }
+  
+  .info-label {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  
+  .info-value {
+    gap: 6px;
+  }
+  
+  .ant-tag {
+    font-size: 11px;
+    padding: 2px 6px;
+    height: 20px;
+    line-height: 16px;
+  }
+  
+  .ant-btn-link {
+    font-size: 12px;
+    padding: 2px 4px;
+    height: 20px;
+  }
+  
+  .ant-input,
+  .ant-input-textarea,
+  .ant-select {
+    font-size: 12px;
+  }
+  
+  .ant-space-item {
+    margin-bottom: 4px;
+  }
+  
+  .ant-space-vertical .ant-space-item {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .project-name {
+    font-size: 18px;
+  }
+  
+  .info-section {
+    padding: 6px 0;
+  }
+  
+  .info-label {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+  
+  .info-value {
+    gap: 4px;
+  }
+  
+  .ant-tag {
+    font-size: 10px;
+    padding: 1px 4px;
+    height: 18px;
+    line-height: 14px;
+  }
+  
+  .ant-btn-link {
+    font-size: 11px;
+    padding: 1px 3px;
+    height: 18px;
+  }
+}
+
 .contact-item {
   display: flex;
   align-items: center;

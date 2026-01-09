@@ -1,0 +1,5 @@
+.smart-parser-page {
+  padding: var(--spacing-lg);
+  height: 100%;
+  overflow: auto;
+}
