@@ -1,0 +1,23 @@
+.custom-vertical-menu .ant-menu-item {
+  border-radius: 8px;
+  height: 56px;
+  margin: var(--spacing-sm) 0;
+  transition: all 0.3s ease;
+  background: #FFFFFF;
+}
+
+.custom-vertical-menu .ant-menu-item:hover {
+  background: #F0F7FF;
+  color: #1890FF;
+}
+
+.custom-vertical-menu .ant-menu-item-selected {
+  background: linear-gradient(90deg, #1890FF 0%, #40A9FF 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: var(--font-weight-medium) !important;
+  box-shadow: 0 4px 10px rgba(24, 144, 255, 0.2);
+}
+
+.custom-vertical-menu .ant-menu-item-selected .ant-menu-item-icon svg {
+  color: #FFFFFF !important;
+}

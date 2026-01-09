@@ -1,0 +1,79 @@
+.smart-parser {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.parser-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.parser-section {
+  margin-bottom: 24px;
+}
+
+.input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.parser-textarea {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.preview-table .ant-table-thead > tr > th {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+.preview-table .ant-table-tbody > tr > td {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.preview-table .ant-table-tbody > tr:hover > td {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.import-confirm {
+  padding: 16px 0;
+}
+
+.import-confirm p {
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.import-confirm strong {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 18px;
+}

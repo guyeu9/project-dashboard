@@ -1,0 +1,88 @@
+.import-export {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.export-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.export-section,
+.import-section {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.export-section h3,
+.import-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ant-upload-drag-icon {
+  font-size: 48px;
+  color: rgba(82, 196, 26, 0.6);
+}
+
+.ant-upload-text {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 8px 0;
+}
+
+.ant-upload-hint {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.export-preview {
+  padding: 16px;
+}
+
+.export-preview h4 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.export-preview h5 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.json-preview {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 16px;
+  border-radius: 6px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.json-preview pre {
+  margin: 0;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ant-table-thead > tr > th {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+.ant-table-tbody > tr > td {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.ant-table-tbody > tr:hover > td {
+  background-color: rgba(255, 255, 255, 0.05);
+}

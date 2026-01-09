@@ -1,0 +1,72 @@
+.project-header {
+  background: #FFFFFF;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #e8e8e8;
+}
+
+.project-title-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.project-name {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.info-section {
+  padding: 12px 0;
+}
+
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.info-label .anticon {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.info-value {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.empty-value {
+  color: rgba(0, 0, 0, 0.35);
+  font-style: italic;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.contact-phone {
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 13px;
+}
+
+.chat-link {
+  text-decoration: none;
+  display: inline-block;
+  margin: 4px 4px 0 0;
+}
+
+.chat-link:hover {
+  opacity: 0.8;
+}

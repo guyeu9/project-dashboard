@@ -1,0 +1,26 @@
+.data-management {
+  padding: 24px;
+}
+
+.data-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.data-tabs {
+  margin-top: 16px;
+}
+
+.data-tabs .ant-tabs-tab {
+  font-size: 15px;
+  padding: 16px 24px;
+}
+
+.data-tabs .ant-tabs-tab-active {
+  background: rgba(82, 196, 26, 0.1);
+  border-radius: 6px 6px 0 0;
+}
+
+.data-tabs .ant-tabs-content-holder {
+  padding: 24px 0 0 0;
+}
