@@ -4,104 +4,227 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-    padding: 16px;
-    background: #fafafa;
-    border-radius: 8px;
+    padding: 20px;
+    background: #FFFFFF;
+    border: 1px solid var(--neutral-border);
+    border-radius: var(--border-radius-base);
     flex-wrap: wrap;
     gap: 16px;
+    box-shadow: var(--shadow-card);
   }
 
   .sort-bar {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
-    background: #fafafa;
-    border-radius: 8px;
-    margin-bottom: 16px;
+    padding: 12px 20px;
+    background: var(--neutral-bg-layout);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 20px;
   }
 
-  .sort-bar span {
-    margin-right: 8px;
-    color: #595959;
-    font-weight: 500;
-  }
-
-  .project-content {
-    min-height: 400px;
-  }
-
-  .project-card {
-    cursor: pointer;
-    transition: all 0.2s ease;
+  /* --- 卡片视图 V3 (莫奈风格) --- */
+  .project-card-v3 {
+    border-radius: var(--border-radius-base) !important;
+    border: 1px solid var(--neutral-border) !important;
+    background: #FFFFFF;
     height: 100%;
+    display: flex;
+    flex-direction: column;
 
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    .ant-card-body {
+      padding: 24px !important;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
   }
 
-  .card-header {
+  .card-header-v3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-  }
+    margin-bottom: 16px;
 
-  .project-owner {
-    color: #8c8c8c;
-    font-size: 13px;
-  }
+    .status-tag-v3 {
+      border-radius: 20px;
+      padding: 2px 12px;
+      font-weight: 600;
+      border: none;
+      font-size: 12px;
+    }
 
-  .project-name {
-    margin: 0 0 12px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #262626;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .card-body {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .info-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .label {
-    color: #595959;
-    font-size: 13px;
-  }
-
-  .value {
-    color: #262626;
-    font-weight: 500;
-  }
-
-  .project-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .list-item {
-    transition: all 0.2s ease;
-
-    &:hover {
-      border-color: #1890ff;
-      box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+    .edit-btn-v3 {
+      color: var(--neutral-secondary);
+      &:hover {
+        color: var(--primary-color);
+        background: var(--primary-bg);
+      }
     }
   }
 
-  .date-range {
-    color: #595959;
+  .project-name-v3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--neutral-title);
+    margin: 0 0 20px 0;
+    line-height: 1.4;
+  }
+
+  .card-body-v3 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .info-row-v3 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .label {
+      font-size: 13px;
+      color: var(--neutral-secondary);
+      font-weight: 500;
+    }
+
+    .value {
+      font-size: 14px;
+      color: var(--neutral-title);
+      font-weight: 600;
+    }
+
+    .date-value {
+      font-family: 'Monaco', 'Consolas', monospace;
+      background: var(--neutral-bg-layout);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+  }
+
+  .dev-team-v3 {
+    .label {
+      font-size: 13px;
+      color: var(--neutral-secondary);
+      margin-bottom: 8px;
+      display: block;
+      font-weight: 500;
+    }
+
+    .dev-tag-v3 {
+      border-radius: 6px;
+      border: 1px solid var(--neutral-border);
+      background: #f9faff;
+      color: var(--primary-color);
+      margin: 0;
+      font-weight: 500;
+
+      &.more {
+        background: var(--neutral-bg-layout);
+        color: var(--neutral-secondary);
+      }
+
+      &.mini {
+        font-size: 11px;
+        padding: 0 4px;
+      }
+    }
+  }
+
+  .card-footer-v3 {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--neutral-border);
+
+    .manage-link-v3 {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-weight: 600;
+      height: 32px;
+      color: var(--primary-color);
+      
+      &:hover {
+        background: var(--primary-bg);
+        border-radius: 8px;
+      }
+    }
+  }
+
+  /* --- 列表视图 V3 (莫奈风格) --- */
+  .project-list-v3 {
+    background: #FFFFFF;
+    border-radius: var(--border-radius-base);
+    border: 1px solid var(--neutral-border);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+
+  .list-header-v3 {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 1.2fr 0.8fr 1.2fr;
+    gap: 16px;
+    padding: 16px 24px;
+    background: var(--neutral-bg-layout);
+    color: var(--neutral-secondary);
+    font-weight: 600;
     font-size: 13px;
+    border-bottom: 1px solid var(--neutral-border);
+  }
+
+  .list-item-v3 {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 1.2fr 0.8fr 1.2fr;
+    gap: 16px;
+    padding: 20px 24px;
+    align-items: center;
+    border-bottom: 1px solid var(--neutral-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: #f9faff;
+      .col-name {
+        color: var(--primary-color);
+      }
+    }
+
+    .col-name {
+      font-weight: 700;
+      color: var(--neutral-title);
+      font-size: 15px;
+    }
+
+    .col-owner {
+      color: var(--neutral-text);
+      font-weight: 500;
+    }
+
+    .col-date {
+      color: var(--neutral-secondary);
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .btn-purple-mini {
+      background: var(--gradient-purple) !important;
+      border: none !important;
+      color: white !important;
+      font-size: 12px !important;
+      height: 28px !important;
+      padding: 0 12px !important;
+      border-radius: 6px !important;
+      
+      &:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+      }
+    }
   }
 }

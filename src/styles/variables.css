@@ -1,82 +1,76 @@
 :root {
-  /* 色彩系统 */
-  /* 主色调 */
-  --primary-color: #667eea;
-  --primary-color-dark: #764ba2;
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* --- 1. 高级质感色彩系统 (莫奈色/强对比/质感升级) --- */
+  --primary-color: #2F54EB; /* 更加纯正的科技蓝 */
+  --primary-hover: #597EF7;
+  --primary-active: #1D39C4;
+  --primary-bg: #F0F5FF;
   
-  /* 辅助色 */
-  --success-color: #52c41a;
-  --warning-color: #faad14;
-  --error-color: #ff4d4f;
-  --info-color: #4facfe;
-  
-  /* 中性色 */
-  --white: #ffffff;
-  --gray-50: #fafafa;
-  --gray-100: #f5f5f5;
-  --gray-200: #f0f0f0;
-  --gray-300: #d9d9d9;
-  --gray-400: #bfbfbf;
-  --gray-500: #8c8c8c;
-  --gray-600: #595959;
-  --gray-700: #434343;
-  --gray-800: #262626;
-  --gray-900: #1f1f1f;
-  
-  /* 字体系统 */
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-md: 16px;
-  --font-size-lg: 18px;
-  --font-size-xl: 20px;
-  --font-size-xxl: 24px;
-  
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-bold: 600;
-  
-  --line-height-base: 1.5;
-  --line-height-lg: 1.6;
-  
-  /* 间距系统 */
+  --success-color: #00B578; /* 更加活力的绿色 */
+  --warning-color: #FA8C16; /* 亮橙色 */
+  --error-color: #F5222D;   /* 纯正红色 */
+  --info-color: #13C2C2;    /* 青色 */
+  --pending-color: #722ED1; /* 极客紫 */
+
+  /* 辅助色 - 用于界面各处的点缀 */
+  --accent-blue: #2F54EB;
+  --accent-green: #52C41A;
+  --accent-purple: #722ED1;
+  --accent-orange: #FA8C16;
+  --accent-pink: #EB2F96;
+
+  /* 中性色 (提升对比度与质感) */
+  --neutral-title: #141414;    /* 几乎全黑的标题，强对比 */
+  --neutral-text: #434343;     /* 深灰正文 */
+  --neutral-secondary: #8C8C8C; /* 灰色描述 */
+  --neutral-disable: #BFBFBF;  /* 禁用态 */
+  --neutral-border: #F0F0F0;   /* 极浅描边 */
+  --neutral-bg-container: #FFFFFF;
+  --neutral-bg-layout: #F5F7FA; /* 极其清爽的背景色 */
+
+  /* --- 2. 间距与布局系统 --- */
+  --spacing-unit: 4px;
   --spacing-xs: 4px;
   --spacing-sm: 8px;
-  --spacing-md: 12px;
-  --spacing-lg: 16px;
-  --spacing-xl: 20px;
-  --spacing-xxl: 24px;
-  --spacing-xxxl: 32px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  /* --- 3. 字体系统 --- */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-sm: 12px;
+  --font-size-h1: 30px;
+  --font-size-h2: 22px;
+  --font-size-h3: 18px;
+
+  /* --- 4. 阴影与圆角 (参考截图的圆润质感) --- */
+  --border-radius-base: 16px; /* 更加圆润的风格 */
+  --border-radius-lg: 24px;
+  --border-radius-sm: 8px;
   
-  /* 边框系统 */
-  --border-width: 1px;
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
-  
-  /* 阴影系统 */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
-  --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.2);
-  
-  /* 过渡系统 */
-  --transition-fast: 0.2s ease;
-  --transition-base: 0.3s ease;
-  --transition-slow: 0.5s ease;
-  
-  /* 布局系统 */
-  --header-height: 64px;
-  --sidebar-width: 220px;
-  --content-padding: 24px;
-  
-  /* Z-index 系统 */
-  --z-index-dropdown: 1000;
-  --z-index-sticky: 1020;
-  --z-index-fixed: 1030;
-  --z-index-modal-backdrop: 1040;
-  --z-index-modal: 1050;
-  --z-index-popover: 1060;
-  --z-index-tooltip: 1070;
+  /* 柔和且深邃的投影，符合现代 UI 趋势 */
+  --shadow-card: 0 8px 24px rgba(149, 157, 165, 0.1);
+  --shadow-button: 0 4px 12px rgba(47, 84, 235, 0.25);
+  --shadow-float: 0 12px 48px rgba(0, 0, 0, 0.08);
+
+  /* --- 5. 动效曲线 --- */
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --transition-base: 0.3s var(--ease-in-out);
+
+  /* --- 7. 莫奈渐变系统 (完全参考截图配色) --- */
+  --gradient-blue: linear-gradient(135deg, #2F54EB 0%, #597EF7 100%);
+  --gradient-green: linear-gradient(135deg, #00B578 0%, #36CFA9 100%);
+  --gradient-purple: linear-gradient(135deg, #722ED1 0%, #B37FEB 100%);
+  --gradient-orange: linear-gradient(135deg, #FA8C16 0%, #FFC069 100%);
+  --gradient-pink: linear-gradient(135deg, #EB2F96 0%, #FF85C0 100%);
+  --gradient-primary: var(--gradient-blue);
+  --gradient-success: var(--gradient-green);
+  --gradient-warning: var(--gradient-orange);
+  --gradient-error: linear-gradient(135deg, #F5222D 0%, #FF4D4F 100%);
+  --gradient-warning: linear-gradient(135deg, #FA8C16 0%, #FFC069 100%);
+  --gradient-delayed: var(--gradient-error); /* 延期默认为红色渐变 */
+  --gradient-risk: var(--gradient-warning);  /* 风险默认为黄色/橙色渐变 */
 }

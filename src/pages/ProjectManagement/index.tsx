@@ -1,17 +1,31 @@
 import { useState, useMemo } from 'react'
-import { Card, Row, Col, Tag, Button, Space, Select, DatePicker, Input, Empty, Radio, Progress, Spin } from 'antd'
-import { SearchOutlined, AppstoreOutlined, UnorderedListOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Tag, Button, Space, Select, DatePicker, Input, Empty, Radio, Progress, Spin, App as AntApp } from 'antd'
+import {
+  SearchOutlined,
+  AppstoreOutlined,
+  UnorderedListOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  SettingOutlined,
+  ArrowRightOutlined
+} from '@ant-design/icons'
 import dayjs from 'dayjs'
 import useStore from '../../store/useStore'
+import useAuthStore from '../../store/authStore'
 import ProjectEditModal from '../../components/ProjectEditModal'
 import { Project } from '../../types'
 import './index.css'
+import { useNavigate } from 'react-router-dom'
 
 const { Option } = Select
 const { RangePicker } = DatePicker
 
 function ProjectManagement() {
   const { projects, addProject, updateProject } = useStore()
+  const { role } = useAuthStore()
+  const { message } = AntApp.useApp()
+  const navigate = useNavigate()
+  const isAdmin = role === 'admin'
   const [loading] = useState(false)
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
   const [statusFilter, setStatusFilter] = useState<string[]>([])
@@ -24,9 +38,11 @@ function ProjectManagement() {
   const [editingProject, setEditingProject] = useState<Project | null>(null)
 
   const statusOptions = [
+    { label: '待开始', value: 'pending' },
     { label: '正常', value: 'normal' },
     { label: '延期', value: 'delayed' },
     { label: '风险', value: 'risk' },
+    { label: '已完成', value: 'completed' },
   ]
 
   const allOwners = useMemo(() => {
@@ -92,20 +108,34 @@ function ProjectManagement() {
   const handleAddProject = () => {
     setEditingProject(null)
     setEditModalVisible(true)
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以保存项目修改')
+    }
   }
 
   const handleEditProject = (project: Project) => {
     setEditingProject(project)
     setEditModalVisible(true)
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以保存项目修改')
+    }
   }
 
   const handleProjectSave = (projectId: string, updates: Partial<Project>) => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以保存项目修改')
+      return
+    }
     updateProject(projectId, updates)
     setEditModalVisible(false)
     setEditingProject(null)
   }
 
   const handleProjectAdd = (project: Project) => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以保存项目修改')
+      return
+    }
     addProject(project)
     setEditModalVisible(false)
     setEditingProject(null)
@@ -118,27 +148,31 @@ function ProjectManagement() {
 
   const getStatusColor = (status: string) => {
     const colorMap = {
-      normal: 'green',
-      delayed: 'red',
-      risk: 'orange',
+      normal: 'var(--success-color)',
+      delayed: 'var(--error-color)', // 延期统一红色
+      risk: 'var(--warning-color)',   // 风险/黄色
+      pending: 'var(--info-color)',
+      completed: '#595959',
     }
-    return colorMap[status as keyof typeof colorMap] || 'default'
+    return colorMap[status as keyof typeof colorMap] || 'var(--neutral-secondary)'
   }
 
   const getStatusText = (status: string) => {
     const textMap = {
+      pending: '待开始',
       normal: '正常',
       delayed: '延期',
       risk: '风险',
+      completed: '已完成',
     }
     return textMap[status as keyof typeof textMap] || status
   }
 
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return '#52c41a'
-    if (progress >= 50) return '#1890ff'
-    if (progress >= 20) return '#faad14'
-    return '#ff4d4f'
+    if (progress >= 80) return 'var(--success-color)'
+    if (progress >= 50) return 'var(--primary-color)'
+    if (progress >= 20) return 'var(--warning-color)'
+    return 'var(--error-color)'
   }
 
   const renderCardView = () => (
@@ -146,71 +180,74 @@ function ProjectManagement() {
       {filteredProjects.map(project => (
         <Col key={project.id} xs={24} sm={12} md={8} lg={6}>
           <Card
-            className="project-card"
+            className="project-card-v3"
             hoverable
-            onClick={() => window.location.href = `/project/${project.id}`}
-            style={{
-              borderRadius: '12px',
-              border: '1px solid #e5e7eb',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-              transition: 'all 0.3s ease',
-              overflow: 'hidden'
-            }}
-            bodyStyle={{ padding: '24px' }}
+            onClick={() => navigate(`/project/${project.id}`)}
+            styles={{ body: { padding: '24px' } }}
           >
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div className="card-header-v3">
               <Tag 
                 color={getStatusColor(project.status)} 
-                style={{ borderRadius: '16px', padding: '4px 12px', fontSize: '12px', fontWeight: '500' }}
+                className="status-tag-v3"
               >
                 {getStatusText(project.status)}
               </Tag>
               <Button
                 type="text"
                 size="small"
+                icon={<SettingOutlined style={{ fontSize: '14px' }} />}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleEditProject(project);
                 }}
-                style={{ fontSize: '12px', padding: '0' }}
+                className="edit-btn-v3"
               >
-                编辑
+                设置
               </Button>
             </div>
-            <h3 className="project-name" style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 'bold', color: '#333' }}>{project.name}</h3>
-            <div className="card-body" style={{ padding: 0 }}>
-              <div className="info-row" style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span className="label" style={{ color: '#666', fontSize: '14px' }}>负责人：</span>
-                <span className="value" style={{ color: '#333', fontSize: '14px' }}>{project.owner}</span>
+            <h3 className="project-name-v3">{project.name}</h3>
+            <div className="card-body-v3">
+              <div className="info-row-v3">
+                <span className="label">负责人</span>
+                <span className="value">{project.owner}</span>
               </div>
-              <div className="info-row" style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span className="label" style={{ color: '#666', fontSize: '14px' }}>进度：</span>
-                <Progress
-                  percent={project.progress}
-                  strokeColor={getProgressColor(project.progress)}
-                  size="small"
-                  style={{ width: '120px' }}
-                />
+              <div className="info-row-v3">
+                <span className="label">当前进度</span>
+                <div style={{ flex: 1, marginLeft: 16 }}>
+                  <Progress
+                    percent={project.progress}
+                    strokeColor={getProgressColor(project.progress)}
+                    size="small"
+                    trailColor="var(--neutral-border)"
+                  />
+                </div>
               </div>
-              <div className="info-row" style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span className="label" style={{ color: '#666', fontSize: '14px' }}>时间：</span>
-                <span className="value" style={{ color: '#333', fontSize: '14px' }}>
+              <div className="info-row-v3">
+                <span className="label">起止时间</span>
+                <span className="value date-value">
                   {dayjs(project.startDate).format('MM/DD')} - {dayjs(project.endDate).format('MM/DD')}
                 </span>
               </div>
-              <div className="info-row" style={{ marginBottom: 0 }}>
-                <span className="label" style={{ color: '#666', fontSize: '14px', display: 'block', marginBottom: '8px' }}>开发：</span>
-                <Space size={4} wrap>
-                  {project.developers.slice(0, 3).map((dev, index) => (
-                    <Tag key={index} color="blue" style={{ margin: 0, borderRadius: '12px', fontSize: '12px' }}>
-                      {dev}
-                    </Tag>
-                  ))}
-                  {project.developers.length > 3 && (
-                    <Tag style={{ borderRadius: '12px', fontSize: '12px' }}>+{project.developers.length - 3}</Tag>
-                  )}
-                </Space>
+              <div className="dev-team-v3">
+                <span className="label">开发团队</span>
+                <div className="team-tags">
+                  <Space size={4} wrap>
+                    {project.developers.slice(0, 3).map((dev, index) => (
+                      <Tag key={index} className="dev-tag-v3">
+                        {dev}
+                      </Tag>
+                    ))}
+                    {project.developers.length > 3 && (
+                      <Tag className="dev-tag-v3 more">+{project.developers.length - 3}</Tag>
+                    )}
+                  </Space>
+                </div>
               </div>
+            </div>
+            <div className="card-footer-v3">
+              <Button type="link" block className="manage-link-v3">
+                查看详情 <ArrowRightOutlined />
+              </Button>
             </div>
           </Card>
         </Col>
@@ -219,100 +256,72 @@ function ProjectManagement() {
   )
 
   const renderListView = () => (
-    <div className="project-list" style={{ marginTop: '24px' }}>
-      <div style={{ 
-        background: '#fafafa', 
-        borderRadius: '8px', 
-        padding: '16px', 
-        marginBottom: '16px',
-        fontWeight: 'bold',
-        color: '#333',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr auto',
-        gap: '16px',
-        alignItems: 'center'
-      }}>
-        <div>项目名称</div>
-        <div>负责人</div>
-        <div>开始日期</div>
-        <div>结束日期</div>
-        <div>开发人员</div>
-        <div>整体进度</div>
-        <div>状态</div>
-        <div style={{ textAlign: 'right' }}>操作</div>
+    <div className="project-list-v3">
+      <div className="list-header-v3">
+        <div className="col-name">项目名称</div>
+        <div className="col-owner">负责人</div>
+        <div className="col-date">周期</div>
+        <div className="col-devs">核心开发</div>
+        <div className="col-progress">进度</div>
+        <div className="col-status">状态</div>
+        <div className="col-action">操作</div>
       </div>
       {filteredProjects.map(project => (
         <div 
           key={project.id} 
-          style={{
-            background: '#fff',
-            borderRadius: '12px',
-            border: '1px solid #f0f0f0',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-            padding: '20px',
-            marginBottom: '16px',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr auto',
-            gap: '16px',
-            alignItems: 'center',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)'}
+          className="list-item-v3"
+          onClick={() => navigate(`/project/${project.id}`)}
         >
-          <div style={{ fontWeight: '500', color: '#333' }}>{project.name}</div>
-          <div style={{ color: '#666' }}>{project.owner}</div>
-          <div style={{ color: '#333' }}>{dayjs(project.startDate).format('YYYY-MM-DD')}</div>
-          <div style={{ color: '#333' }}>{dayjs(project.endDate).format('YYYY-MM-DD')}</div>
-          <div style={{ color: '#666' }}>{project.developers.slice(0, 2).join(', ')}</div>
-          <div>
+          <div className="col-name">{project.name}</div>
+          <div className="col-owner">{project.owner}</div>
+          <div className="col-date">
+            {dayjs(project.startDate).format('YYYY-MM-DD')}
+          </div>
+          <div className="col-devs">
+            <Space size={4}>
+              {project.developers.slice(0, 2).map((dev, i) => (
+                <Tag key={i} className="dev-tag-v3 mini">{dev}</Tag>
+              ))}
+            </Space>
+          </div>
+          <div className="col-progress">
             <Progress
               percent={project.progress}
               strokeColor={getProgressColor(project.progress)}
               size="small"
-              style={{ width: '100px' }}
+              style={{ width: '100px', margin: 0 }}
             />
-            <span style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>{project.progress}%</span>
           </div>
-          <div>
+          <div className="col-status">
             <Tag 
               color={getStatusColor(project.status)} 
-              style={{ borderRadius: '16px', padding: '4px 12px', fontSize: '12px', fontWeight: '500' }}
+              className="status-tag-v3"
             >
               {getStatusText(project.status)}
             </Tag>
           </div>
-          <div style={{ textAlign: 'right' }}>
-          <Space>
-            <Button 
-              type="text" 
-              size="small" 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEditProject(project);
-              }}
-              style={{ fontSize: '12px' }}
-            >
-              编辑
-            </Button>
-            <Button 
-              type="primary" 
-              size="small" 
-              onClick={() => window.location.href = `/project/${project.id}`}
-              style={{ 
-                borderRadius: '6px', 
-                background: 'linear-gradient(45deg, #0f3460 0%, #16537e 100%)', 
-                border: 'none',
-                padding: '4px 12px',
-                fontSize: '12px',
-                fontWeight: '500',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              管理进度
-            </Button>
-          </Space>
-        </div>
+          <div className="col-action">
+            <Space>
+              <Button 
+                type="text" 
+                size="small" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEditProject(project);
+                }}
+                className="edit-btn-list"
+              >
+                编辑
+              </Button>
+              <Button 
+                type="primary" 
+                size="small" 
+                className="btn-purple-mini"
+              >
+                管理
+              </Button>
+            </Space>
+          </div>
         </div>
       ))}
     </div>
@@ -331,15 +340,7 @@ function ProjectManagement() {
       <Card 
         title="项目进度" 
         extra={
-          <Button type="primary" style={{ 
-            borderRadius: '8px', 
-            background: 'linear-gradient(45deg, #0f3460 0%, #16537e 100%)', 
-            border: 'none',
-            padding: '6px 16px',
-            fontSize: '14px',
-            fontWeight: '500',
-            transition: 'all 0.3s ease'
-          }} onClick={handleAddProject}>
+          <Button type="primary" onClick={handleAddProject} disabled={!isAdmin}>
             新建项目
           </Button>
         }

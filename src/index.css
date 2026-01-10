@@ -76,9 +76,133 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+/* Ant Design Card 风格统一 */
+.ant-card {
+  border-radius: var(--border-radius-base) !important;
+  border: 1px solid var(--neutral-border) !important;
+  box-shadow: var(--shadow-card) !important;
+  transition: all 0.3s var(--ease-in-out) !important;
+}
+
+.ant-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(149, 157, 165, 0.15) !important;
+}
+
+/* Ant Design Button 风格统一 */
+.ant-btn {
+  border-radius: var(--border-radius-sm) !important;
+  height: 40px !important;
+  padding: 4px 20px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s var(--ease-in-out) !important;
+}
+
+.ant-btn-primary {
+  background: var(--gradient-primary) !important;
+  border: none !important;
+  box-shadow: var(--shadow-button) !important;
+  color: #FFFFFF !important;
+}
+
+.ant-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(47, 84, 235, 0.35) !important;
+  filter: brightness(1.1);
+}
+
+/* 截图中的紫色按钮样式 */
+.btn-purple {
+  background: var(--gradient-purple) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.btn-purple:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(114, 46, 209, 0.3) !important;
+}
+
+/* 弹窗样式优化 */
+.compact-modal .ant-modal-content {
+  padding: 24px !important;
+  border-radius: 20px !important;
+}
+
+.compact-modal .ant-modal-header {
+  margin-bottom: 20px !important;
+}
+
+.compact-modal .ant-modal-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--neutral-title) !important;
+}
+
+.compact-form .ant-form-item {
+  margin-bottom: 16px !important;
+}
+
+.compact-form .ant-form-item-label {
+  padding-bottom: 4px !important;
+}
+
+.compact-form .ant-form-item-label label {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--neutral-text) !important;
+}
+
+.compact-form .ant-input,
+.compact-form .ant-input-number,
+.compact-form .ant-select-selector,
+.compact-form .ant-picker {
+  border-radius: 8px !important;
+  border-color: var(--neutral-border) !important;
+}
+
+.compact-form .ant-input:focus,
+.compact-form .ant-select-focused .ant-select-selector {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(47, 84, 235, 0.1) !important;
+}
+
+/* 输入框风格 */
+.ant-input, .ant-select-selector {
+  border-radius: var(--border-radius-sm) !important;
+  border-color: var(--neutral-border) !important;
+}
+
+.ant-input:hover, .ant-select-selector:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.ant-btn-warning {
+  background: var(--gradient-warning) !important;
+  border: none !important;
+  color: #FFFFFF !important;
+}
+
+.ant-btn-danger, .ant-btn-error {
+  background: var(--gradient-error) !important;
+  border: none !important;
+  color: #FFFFFF !important;
+}
+
+/* 统一按钮圆角与质感 */
+.ant-btn {
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 36px !important;
+  padding: 4px 16px !important;
+}
+
 /* 渐变背景 */
 .gradient-bg {
-  background: var(--primary-gradient);
+  background: var(--gradient-primary);
 }
 
 /* 圆角样式 */

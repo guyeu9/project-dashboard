@@ -1,0 +1,92 @@
+.dashboard-container {
+  padding: 0;
+}
+
+.metrics-row {
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.metric-card-vibrant {
+  border-radius: var(--border-radius-base);
+  transition: all 0.3s var(--ease-in-out);
+  cursor: pointer;
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+.metric-card-vibrant:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15) !important;
+}
+
+.metric-card-vibrant.active {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2) !important;
+}
+
+.metric-icon-bg {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  font-size: 80px;
+  color: rgba(255, 255, 255, 0.15);
+  transform: rotate(-15deg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.metric-card-decoration {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.title-indicator {
+  width: 4px;
+  height: 18px;
+  background: var(--primary-color);
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.main-gantt-card {
+  border-radius: var(--border-radius-base);
+  background: #FFFFFF;
+  border: 1px solid var(--neutral-border);
+  box-shadow: var(--shadow-card);
+}
+
+.main-gantt-card .ant-card-head {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--neutral-border);
+}
+
+.main-gantt-card .ant-card-body {
+  padding: 0;
+}
+
+.dashboard-header h1 {
+  letter-spacing: -0.5px;
+}
+
+/* 针对 4.8 列宽的微调 */
+@media screen and (max-width: 1200px) {
+  .metrics-row .ant-col-lg-4-8 {
+    flex: 0 0 33.3333%;
+    max-width: 33.3333%;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  .metrics-row .ant-col-xs-24 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}

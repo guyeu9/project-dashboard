@@ -1,6 +1,15 @@
 import { useState } from 'react'
-import { Card, Row, Col, Tag, Input, Space, Modal, message, Button, Select } from 'antd'
-import { EditOutlined, LinkOutlined, UserOutlined, TeamOutlined, FileTextOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Tag, Input, Space, Modal, Button, Select, App as AntApp } from 'antd'
+import { 
+  EditOutlined, 
+  LinkOutlined, 
+  UserOutlined, 
+  TeamOutlined, 
+  FileTextOutlined, 
+  FlagOutlined, 
+  CalendarOutlined,
+  ArrowLeftOutlined
+} from '@ant-design/icons'
 import { Project } from '../../types'
 import './index.css'
 
@@ -10,12 +19,13 @@ const { TextArea } = Input
 
 interface ProjectHeaderProps {
   project: Project
-  riskStatus: 'normal' | 'risk' | 'delayed'
-  onRiskStatusChange: (status: 'normal' | 'risk' | 'delayed') => void
   onProjectUpdate: (field: string, value: any) => void
+  isAdmin: boolean
+  onBack?: () => void
 }
 
-function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdate }: ProjectHeaderProps) {
+function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHeaderProps) {
+  const { message } = AntApp.useApp()
   const [editingName, setEditingName] = useState(false)
   const [projectName, setProjectName] = useState(project.name)
   const [editingField, setEditingField] = useState<string | null>(null)
@@ -24,6 +34,10 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
   const [remark, setRemark] = useState(project.remark || '')
 
   const handleNameEdit = () => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以修改项目名称')
+      return
+    }
     setEditingName(true)
   }
 
@@ -38,11 +52,19 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
   }
 
   const handleFieldEdit = (field: string, currentValue: string) => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以修改项目信息')
+      return
+    }
     setEditingField(field)
     setEditValue(currentValue)
   }
 
   const handleFieldSave = () => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以修改项目信息')
+      return
+    }
     let value: any = editValue
     
     // 处理数组类型的字段
@@ -62,12 +84,24 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
   }
 
   const handleRemarkSave = () => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以修改项目备注')
+      return
+    }
     setRemarkModalVisible(false)
     message.success('备注已更新')
   }
 
   return (
     <Card className="project-header">
+      <div style={{ position: 'absolute', right: 24, top: 24, zIndex: 10 }}>
+        <Button 
+          icon={<ArrowLeftOutlined />} 
+          onClick={onBack}
+        >
+          返回项目管理
+        </Button>
+      </div>
       <Row gutter={24}>
         <Col span={24}>
           <div className="project-title-section">
@@ -89,14 +123,16 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
             ) : (
               <Space>
                 <h1 className="project-name">{project.name}</h1>
-                <Button
-                  type="text"
-                  icon={<EditOutlined />}
-                  onClick={handleNameEdit}
-                  size="small"
-                >
-                  编辑
-                </Button>
+                {isAdmin && (
+                  <Button
+                    type="text"
+                    icon={<EditOutlined />}
+                    onClick={handleNameEdit}
+                    size="small"
+                  >
+                    编辑
+                  </Button>
+                )}
               </Space>
             )}
           </div>
@@ -124,15 +160,96 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
                   </Button>
                 </Space>
               ) : (
-                <div onClick={() => handleFieldEdit('partners', project.partners.join(','))} style={{ cursor: 'pointer' }}>
+                <div 
+                  onClick={() => isAdmin && handleFieldEdit('partners', project.partners.join(','))} 
+                  style={{ cursor: isAdmin ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
+                >
                   {project.partners.map((partner: string, index: number) => (
                     <Tag key={index} color="blue" style={{ margin: '4px 4px 0 0' }}>
                       {partner}
                     </Tag>
                   ))}
-                  <Button type="link" size="small" icon={<EditOutlined />}>
-                    编辑
+                  {isAdmin && (
+                    <Button type="link" size="small" icon={<EditOutlined />}>
+                      编辑
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} md={8} lg={8}>
+          <div className="info-section">
+            <div className="info-label">
+              <UserOutlined /> 产品经理
+            </div>
+            <div className="info-value">
+              {editingField === 'productManager' ? (
+                <Space>
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder="请输入产品经理"
+                    style={{ width: '100%' }}
+                  />
+                  <Button type="primary" size="small" onClick={handleFieldSave}>
+                    保存
                   </Button>
+                  <Button size="small" onClick={handleFieldCancel}>
+                    取消
+                  </Button>
+                </Space>
+              ) : (
+                <div
+                  onClick={() => isAdmin && handleFieldEdit('productManager', project.productManager || '')}
+                  style={{ cursor: isAdmin ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
+                >
+                  <Tag color="geekblue">{project.productManager || '未设置'}</Tag>
+                  {isAdmin && (
+                    <Button type="link" size="small" icon={<EditOutlined />}>
+                      编辑
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} md={8} lg={8}>
+          <div className="info-section">
+            <div className="info-label">
+              <UserOutlined /> PMO
+            </div>
+            <div className="info-value">
+              {editingField === 'pmo' ? (
+                <Space>
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder="请输入 PMO"
+                    style={{ width: '100%' }}
+                  />
+                  <Button type="primary" size="small" onClick={handleFieldSave}>
+                    保存
+                  </Button>
+                  <Button size="small" onClick={handleFieldCancel}>
+                    取消
+                  </Button>
+                </Space>
+              ) : (
+                <div 
+                  onClick={() => isAdmin && handleFieldEdit('pmo', project.pmo || '')} 
+                  style={{ cursor: isAdmin ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
+                >
+                  <Tag color="cyan">{project.pmo || '未设置'}</Tag>
+                  {isAdmin && (
+                    <Button type="link" size="small" icon={<EditOutlined />}>
+                      编辑
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -161,15 +278,20 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
                   </Button>
                 </Space>
               ) : (
-                <div onClick={() => handleFieldEdit('developers', project.developers.join(','))} style={{ cursor: 'pointer' }}>
+                <div 
+                  onClick={() => isAdmin && handleFieldEdit('developers', project.developers.join(','))} 
+                  style={{ cursor: isAdmin ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
+                >
                   {project.developers.map((dev: string, index: number) => (
                     <Tag key={index} color="green" style={{ margin: '4px 4px 0 0' }}>
                       {dev}
                     </Tag>
                   ))}
-                  <Button type="link" size="small" icon={<EditOutlined />}>
-                    编辑
-                  </Button>
+                  {isAdmin && (
+                    <Button type="link" size="small" icon={<EditOutlined />}>
+                      编辑
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -198,15 +320,20 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
                   </Button>
                 </Space>
               ) : (
-                <div onClick={() => handleFieldEdit('testers', project.testers.join(','))} style={{ cursor: 'pointer' }}>
+                <div 
+                  onClick={() => isAdmin && handleFieldEdit('testers', project.testers.join(','))} 
+                  style={{ cursor: isAdmin ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
+                >
                   {project.testers.map((tester: string, index: number) => (
                     <Tag key={index} color="orange" style={{ margin: '4px 4px 0 0' }}>
                       {tester}
                     </Tag>
                   ))}
-                  <Button type="link" size="small" icon={<EditOutlined />}>
-                    编辑
-                  </Button>
+                  {isAdmin && (
+                    <Button type="link" size="small" icon={<EditOutlined />}>
+                      编辑
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -235,11 +362,16 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
                   </Button>
                 </Space>
               ) : (
-                <div onClick={() => handleFieldEdit('owner', project.owner)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <div 
+                  onClick={() => isAdmin && handleFieldEdit('owner', project.owner)} 
+                  style={{ cursor: isAdmin ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
+                >
                   <Tag color="purple">{project.owner}</Tag>
-                  <Button type="link" size="small" icon={<EditOutlined />}>
-                    编辑
-                  </Button>
+                  {isAdmin && (
+                    <Button type="link" size="small" icon={<EditOutlined />}>
+                      编辑
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -249,25 +381,51 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
         <Col xs={24} sm={12} md={8} lg={8}>
           <div className="info-section">
             <div className="info-label">
-              <ExclamationCircleOutlined /> 项目风险
+              <FlagOutlined /> 项目状态
             </div>
             <div className="info-value">
               <Select
-                value={riskStatus}
-                onChange={onRiskStatusChange}
+                value={project.status}
+                onChange={(value) => {
+                  if (!isAdmin) {
+                    message.warning('当前为游客，仅管理员可以修改项目信息')
+                    return
+                  }
+                  onProjectUpdate('status', value)
+                }}
                 style={{ width: '100%' }}
                 size="small"
+                disabled={!isAdmin}
               >
-                <Option value="normal">
-                  <Tag color="green">正常</Tag>
+                <Option value="pending">
+                  待开始
                 </Option>
-                <Option value="risk">
-                  <Tag color="orange">风险</Tag>
+                <Option value="normal">
+                  正常
                 </Option>
                 <Option value="delayed">
-                  <Tag color="red">延期</Tag>
+                  延期
+                </Option>
+                <Option value="risk">
+                  风险
+                </Option>
+                <Option value="completed">
+                  已完成
                 </Option>
               </Select>
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} md={8} lg={8}>
+          <div className="info-section">
+            <div className="info-label">
+              <CalendarOutlined /> 项目周期
+            </div>
+            <div className="info-value">
+              <span>
+                {project.startDate} ~ {project.endDate}
+              </span>
             </div>
           </div>
         </Col>
@@ -279,17 +437,30 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
             </div>
             <div className="info-value">
               {project.chatGroupLinks && project.chatGroupLinks.length > 0 ? (
-                project.chatGroupLinks.map((link: string, index: number) => (
-                  <a
-                    key={index}
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="chat-link"
-                  >
+                project.chatGroupLinks.map((link: string, index: number) => {
+                  const isUrl = /^https?:\/\//.test(link)
+                  const content = (
                     <Tag color="cyan">群组 {index + 1}</Tag>
-                  </a>
-                ))
+                  )
+                  if (isUrl) {
+                    return (
+                      <a
+                        key={index}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="chat-link"
+                      >
+                        {content}
+                      </a>
+                    )
+                  }
+                  return (
+                    <span key={index} className="chat-link">
+                      {content}
+                    </span>
+                  )
+                })
               ) : (
                 <span className="empty-value">暂无</span>
               )}
@@ -342,7 +513,10 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
                   </Button>
                 </Space>
               ) : (
-                <div onClick={() => handleFieldEdit('remark', project.remark || '')} style={{ cursor: 'pointer' }}>
+                <div 
+                  onClick={() => isAdmin && handleFieldEdit('remark', project.remark || '')} 
+                  style={{ cursor: isAdmin ? 'pointer' : 'default' }}
+                >
                   {project.remark ? (
                     <div style={{ 
                       backgroundColor: '#f5f5f5', 
@@ -351,16 +525,28 @@ function ProjectHeader({ project, riskStatus, onRiskStatusChange, onProjectUpdat
                       border: '1px solid #d9d9d9',
                       fontSize: '14px',
                       lineHeight: '1.5',
-                      whiteSpace: 'pre-wrap'
+                      whiteSpace: 'pre-wrap',
+                      position: 'relative'
                     }}>
                       {project.remark}
+                      {isAdmin && (
+                        <div style={{ position: 'absolute', right: 8, top: 8 }}>
+                          <Button type="link" size="small" icon={<EditOutlined />}>
+                            编辑
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <span className="empty-value">暂无备注，点击添加</span>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span className="empty-value">暂无备注，{isAdmin ? '点击添加' : '仅管理员可添加'}</span>
+                      {isAdmin && (
+                        <Button type="link" size="small" icon={<EditOutlined />}>
+                          编辑
+                        </Button>
+                      )}
+                    </div>
                   )}
-                  <Button type="link" size="small" icon={<EditOutlined />}>
-                    编辑
-                  </Button>
                 </div>
               )}
             </div>

@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import { Project, Task, TaskType } from '../types'
 import { mockProjects } from './mockData'
 
-// 模拟任务数据
 const mockTasks: Task[] = [
   {
     id: 'task-1',
@@ -11,29 +10,36 @@ const mockTasks: Task[] = [
     type: { id: '1', name: '开发排期', color: '#1890ff', enabled: true },
     status: 'normal',
     progress: 80,
-    startDate: '2024-01-01',
-    endDate: '2024-01-10',
+    startDate: '2026-01-01',
+    endDate: '2026-01-10',
     assignees: ['张三', '李四'],
     dailyRecords: [
       {
-        date: '2024-01-01',
+        date: '2026-01-01',
         progress: 10,
         status: 'normal',
         content: '项目启动，环境搭建完成',
         assignees: ['张三', '李四']
       },
       {
-        date: '2024-01-02',
+        date: '2026-01-02',
         progress: 25,
         status: 'risk',
         content: '遇到技术难点，需要协调资源',
         assignees: ['张三', '李四']
       },
       {
-        date: '2024-01-03',
+        date: '2026-01-03',
         progress: 30,
         status: 'normal',
         content: '技术问题解决，继续开发',
+        assignees: ['张三', '李四']
+      },
+      {
+        date: '2026-01-04',
+        progress: 40,
+        status: 'delayed',
+        content: '联调接口延后，整体进度有延期风险',
         assignees: ['张三', '李四']
       }
     ]
@@ -45,12 +51,12 @@ const mockTasks: Task[] = [
     type: { id: '2', name: '开发联调', color: '#52c41a', enabled: true },
     status: 'normal',
     progress: 60,
-    startDate: '2024-01-11',
-    endDate: '2024-01-15',
+    startDate: '2026-01-11',
+    endDate: '2026-01-15',
     assignees: ['张三', '李四'],
     dailyRecords: [
       {
-        date: '2024-01-11',
+        date: '2026-01-11',
         progress: 50,
         status: 'normal',
         content: '开始联调测试',
@@ -65,8 +71,8 @@ const mockTasks: Task[] = [
     type: { id: '3', name: '测试排期', color: '#faad14', enabled: true },
     status: 'normal',
     progress: 40,
-    startDate: '2024-01-16',
-    endDate: '2024-01-25',
+    startDate: '2026-01-16',
+    endDate: '2026-01-25',
     assignees: ['王五', '赵六'],
     dailyRecords: []
   }
@@ -92,43 +98,69 @@ interface AppState {
   initializeData: () => void
 }
 
-// localStorage 数据持久化工具
-const STORAGE_KEY = 'project-management-data'
+const API_BASE_URL =
+  (import.meta as any).env && (import.meta as any).env.VITE_API_BASE_URL
+    ? (import.meta as any).env.VITE_API_BASE_URL
+    : ''
 
-const loadFromStorage = () => {
+const API_URL = `${API_BASE_URL}/api/data`
+
+const defaultData: { projects: Project[]; tasks: Task[] } = {
+  projects: mockProjects,
+  tasks: mockTasks,
+}
+
+const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[] } | null> => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const data = JSON.parse(stored)
-      return {
-        projects: data.projects || mockProjects,
-        tasks: data.tasks || mockTasks,
-      }
+    const res = await fetch(API_URL, { method: 'GET' })
+    if (!res.ok) {
+      return null
+    }
+    const data = await res.json()
+    if (!data.projects || !data.tasks) {
+      return null
+    }
+    return {
+      projects: data.projects as Project[],
+      tasks: data.tasks as Task[],
     }
   } catch (error) {
-    console.error('加载本地存储数据失败:', error)
-  }
-  return {
-    projects: mockProjects,
-    tasks: mockTasks,
+    console.error('从服务端加载数据失败:', error)
+    return null
   }
 }
 
-const saveToStorage = (data: { projects: Project[], tasks: Task[] }) => {
+const saveToServer = async (data: { projects: Project[]; tasks: Task[] }) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
   } catch (error) {
-    console.error('保存本地存储数据失败:', error)
+    console.error('保存数据到服务端失败:', error)
   }
 }
 
 const useStore = create<AppState>((set, get) => {
-  // 初始化时从本地存储加载数据
-  const initialData = loadFromStorage()
-  
+  const applyAndPersist = (data: { projects: Project[]; tasks: Task[] }) => {
+    set({ projects: data.projects, tasks: data.tasks })
+    saveToServer(data)
+  }
+
+  syncFromServer().then((serverData) => {
+    if (serverData) {
+      applyAndPersist(serverData)
+    } else {
+      saveToServer(defaultData)
+    }
+  })
+
   return {
-    projects: initialData.projects,
-    tasks: initialData.tasks,
+    projects: defaultData.projects,
+    tasks: defaultData.tasks,
     taskTypes: [
       { id: '1', name: '开发排期', color: '#1890ff', enabled: true },
       { id: '2', name: '开发联调', color: '#52c41a', enabled: true },
@@ -141,12 +173,12 @@ const useStore = create<AppState>((set, get) => {
     selectedStatus: [],
     
     setProjects: (projects) => {
-      set({ projects })
-      saveToStorage({ projects, tasks: get().tasks })
+      const data = { projects, tasks: get().tasks }
+      applyAndPersist(data)
     },
     setTasks: (tasks) => {
-      set({ tasks })
-      saveToStorage({ projects: get().projects, tasks })
+      const data = { projects: get().projects, tasks }
+      applyAndPersist(data)
     },
     setTaskTypes: (taskTypes) => set({ taskTypes }),
     setSelectedProjectId: (projectId) => set({ selectedProjectId: projectId }),
@@ -154,32 +186,37 @@ const useStore = create<AppState>((set, get) => {
     
     addProject: (project) => {
       const newProjects = [...get().projects, project]
-      set({ projects: newProjects })
-      saveToStorage({ projects: newProjects, tasks: get().tasks })
+      const data = { projects: newProjects, tasks: get().tasks }
+      applyAndPersist(data)
     },
     updateProject: (projectId, updates) => {
       const newProjects = get().projects.map((p) => (p.id === projectId ? { ...p, ...updates } : p))
-      set({ projects: newProjects })
-      saveToStorage({ projects: newProjects, tasks: get().tasks })
+      const data = { projects: newProjects, tasks: get().tasks }
+      applyAndPersist(data)
     },
     addTask: (task) => {
       const newTasks = [...get().tasks, task]
-      set({ tasks: newTasks })
-      saveToStorage({ projects: get().projects, tasks: newTasks })
+      const data = { projects: get().projects, tasks: newTasks }
+      applyAndPersist(data)
     },
     updateTask: (taskId, updates) => {
       const newTasks = get().tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t))
-      set({ tasks: newTasks })
-      saveToStorage({ projects: get().projects, tasks: newTasks })
+      const data = { projects: get().projects, tasks: newTasks }
+      applyAndPersist(data)
     },
     deleteTask: (taskId) => {
       const newTasks = get().tasks.filter((t) => t.id !== taskId)
-      set({ tasks: newTasks })
-      saveToStorage({ projects: get().projects, tasks: newTasks })
+      const data = { projects: get().projects, tasks: newTasks }
+      applyAndPersist(data)
     },
     initializeData: () => {
-      const data = loadFromStorage()
-      set(data)
+      syncFromServer().then((serverData) => {
+        if (serverData) {
+          applyAndPersist(serverData)
+        } else {
+          applyAndPersist(defaultData)
+        }
+      })
     },
   }
 })

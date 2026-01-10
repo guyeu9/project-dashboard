@@ -1,255 +1,212 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Card, Row, Col, Statistic, Spin } from 'antd'
+import { Card, Row, Col, Spin, Tag, Space } from 'antd'
 import { 
-  CheckCircleOutlined, 
-  CloseCircleOutlined, 
-  ClockCircleOutlined 
+  ClockCircleOutlined,
+  ProjectOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons'
+import { motion, AnimatePresence } from 'framer-motion'
 import useStore from '../../store/useStore'
 import MasterGantt from '../../components/MasterGantt'
+import './index.css'
 
 function Dashboard() {
   const { projects } = useStore()
   const [loading, setLoading] = useState(false)
   const [selectedFilter, setSelectedFilter] = useState<string>('all')
 
-  const filteredProjects = useMemo(() => {
-    if (selectedFilter === 'ongoing') {
-      // 当前进行项目：显示所有未结束的项目（包括正常、延期、风险状态）
-      return projects.filter((p) => p.status === 'normal' || p.status === 'delayed' || p.status === 'risk')
-    } else if (selectedFilter === 'parallel') {
-      // 并行项目：显示所有并行项目
-      return projects.filter((p) => p.status === 'normal' || p.status === 'delayed' || p.status === 'risk')
-    } else if (selectedFilter === 'delayed') {
-      return projects.filter((p) => p.status === 'delayed')
-    } else if (selectedFilter === 'risk') {
-      return projects.filter((p) => p.status === 'risk')
-    } else if (selectedFilter === 'pending') {
-      // 待开始项目：显示进度为0的正常状态项目
-      return projects.filter((p) => p.status === 'normal' && p.progress === 0)
-    }
-    return projects
-  }, [projects, selectedFilter])
-
-  const handleFilterClick = (filter: string) => {
-    setSelectedFilter(selectedFilter === filter ? 'all' : filter)
-  }
-
-  const metrics = useMemo(() => {
-    const ongoingProjects = projects.filter((p: any) => p.status !== 'completed').length
-    const parallelProjects = projects.filter((p: any) => p.status === 'normal' || p.status === 'delayed' || p.status === 'risk').length
-    const delayedProjects = projects.filter((p: any) => p.status === 'delayed').length
-    const riskProjects = projects.filter((p: any) => p.status === 'risk').length
-    const pendingProjects = projects.filter((p: any) => p.status === 'normal' && p.progress === 0).length
-
-    return {
-      ongoingProjects,
-      parallelProjects,
-      delayedProjects,
-      riskProjects,
-      pendingProjects,
-    }
-  }, [projects])
-
   useEffect(() => {
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-    }, 500)
+    setTimeout(() => setLoading(false), 500)
   }, [])
+
+  // 计算各状态数量
+  const metrics = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0]
+    
+    // 过滤掉已完成的项目进行统计
+    const activeProjects = projects.filter(p => p.status !== 'completed')
+    const total = activeProjects.length
+    
+    const normal = projects.filter(p => p.status === 'normal').length
+    const risk = projects.filter(p => p.status === 'risk').length
+    const delayed = projects.filter(p => p.status === 'delayed').length
+    
+    // 待开始逻辑
+    const pendingProjects = projects.filter(p => {
+      if (p.status === 'pending') return true
+      if (!p.startDate) return true
+      return p.startDate > today
+    })
+    const pendingCount = pendingProjects.length
+
+    return [
+      { 
+        label: '全部项目', 
+        count: total, 
+        gradient: 'var(--gradient-blue)',
+        icon: <ProjectOutlined />, 
+        key: 'all' 
+      },
+      { 
+        label: '待开始', 
+        count: pendingCount, 
+        gradient: 'var(--gradient-purple)',
+        icon: <ClockCircleOutlined />, 
+        key: 'pending' 
+      },
+      { 
+        label: '正常推进', 
+        count: normal, 
+        gradient: 'var(--gradient-green)',
+        icon: <CheckCircleOutlined />, 
+        key: 'normal' 
+      },
+      { 
+        label: '存在风险', 
+        count: risk, 
+        gradient: 'var(--gradient-warning)',
+        icon: <ExclamationCircleOutlined />, 
+        key: 'risk' 
+      },
+      { 
+        label: '已延期', 
+        count: delayed, 
+        gradient: 'var(--gradient-error)',
+        icon: <ClockCircleOutlined />, 
+        key: 'delayed' 
+      },
+    ]
+  }, [projects])
+
+  const filteredProjects = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0]
+    if (selectedFilter === 'all') return projects.filter(p => p.status !== 'completed')
+    if (selectedFilter === 'pending') {
+      return projects.filter(p => {
+        if (p.status === 'pending') return true
+        if (!p.startDate) return true
+        return p.startDate > today
+      })
+    }
+    return projects.filter(p => p.status === selectedFilter)
+  }, [projects, selectedFilter])
+
+  const handleFilterClick = (key: string) => {
+    setSelectedFilter(key === selectedFilter ? 'all' : key)
+  }
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  }
+
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
+  }
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div className="loading-container">
         <Spin size="large" />
       </div>
     )
   }
 
   return (
-    <div>
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={8} lg={4} xl={4}>
-          <Card
-            hoverable
-            onClick={() => handleFilterClick('ongoing')}
-            style={{
-              background: selectedFilter === 'ongoing' 
-                ? 'linear-gradient(135deg, #722ED1 0%, #B37FEB 100%)' 
-                : 'linear-gradient(135deg, #9254DE 0%, #D3ADF7 100%)',
-              borderRadius: '10px',
-              boxShadow: selectedFilter === 'ongoing' 
-                ? '0 0 0 2px #722ed1, 0 10px 20px rgba(0, 0, 0, 0.15)' 
-                : '0 10px 20px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-              border: 'none',
-              overflow: 'hidden',
-              padding: '12px',
-              position: 'relative',
-              height: '120px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '12px', marginBottom: '8px', fontWeight: '500', textAlign: 'left' }}>
-              当前进行项目
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <Statistic
-                value={metrics.ongoingProjects}
-                valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: '800', fontFamily: '"Inter", "HarmonyOS Sans", "SF Pro Display", sans-serif', textAlign: 'left' }}
-              />
-              <CheckCircleOutlined style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', alignSelf: 'flex-start', marginTop: '6px' }} />
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4} xl={4}>
-          <Card
-            hoverable
-            onClick={() => handleFilterClick('parallel')}
-            style={{
-              background: selectedFilter === 'parallel' 
-                ? 'linear-gradient(135deg, #1890FF 0%, #40A9FF 100%)' 
-                : 'linear-gradient(135deg, #69C0FF 0%, #BAE7FF 100%)',
-              borderRadius: '10px',
-              boxShadow: selectedFilter === 'parallel' 
-                ? '0 0 0 2px #1890ff, 0 10px 20px rgba(0, 0, 0, 0.15)' 
-                : '0 10px 20px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-              border: 'none',
-              overflow: 'hidden',
-              padding: '12px',
-              position: 'relative',
-              height: '120px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '12px', marginBottom: '8px', fontWeight: '500', textAlign: 'left' }}>
-              并行项目
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <Statistic
-                value={metrics.parallelProjects}
-                valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: '800', fontFamily: '"Inter", "HarmonyOS Sans", "SF Pro Display", sans-serif', textAlign: 'left' }}
-              />
-              <CheckCircleOutlined style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', alignSelf: 'flex-start', marginTop: '6px' }} />
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4} xl={4}>
-          <Card
-            hoverable
-            onClick={() => handleFilterClick('delayed')}
-            style={{
-              background: selectedFilter === 'delayed' 
-                ? 'linear-gradient(135deg, #FF4D4F 0%, #FF7875 100%)' 
-                : 'linear-gradient(135deg, #FF7A45 0%, #FFB980 100%)',
-              borderRadius: '10px',
-              boxShadow: selectedFilter === 'delayed' 
-                ? '0 0 0 2px #ff4d4f, 0 10px 20px rgba(0, 0, 0, 0.15)' 
-                : '0 10px 20px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-              border: 'none',
-              overflow: 'hidden',
-              padding: '12px',
-              position: 'relative',
-              height: '120px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '12px', marginBottom: '8px', fontWeight: '500', textAlign: 'left' }}>
-              延期项目
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <Statistic
-                value={metrics.delayedProjects}
-                valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: '800', fontFamily: '"Inter", "HarmonyOS Sans", "SF Pro Display", sans-serif', textAlign: 'left' }}
-              />
-              <CloseCircleOutlined style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', alignSelf: 'flex-start', marginTop: '6px' }} />
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4} xl={4}>
-          <Card
-            hoverable
-            onClick={() => handleFilterClick('risk')}
-            style={{
-              background: selectedFilter === 'risk' 
-                ? 'linear-gradient(135deg, #FA8C16 0%, #FFC53D 100%)' 
-                : 'linear-gradient(135deg, #FAAD14 0%, #FFD666 100%)',
-              borderRadius: '10px',
-              boxShadow: selectedFilter === 'risk' 
-                ? '0 0 0 2px #faad14, 0 10px 20px rgba(0, 0, 0, 0.15)' 
-                : '0 10px 20px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-              border: 'none',
-              overflow: 'hidden',
-              padding: '12px',
-              position: 'relative',
-              height: '120px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '12px', marginBottom: '8px', fontWeight: '500', textAlign: 'left' }}>
-              风险项目
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <Statistic
-                value={metrics.riskProjects}
-                valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: '800', fontFamily: '"Inter", "HarmonyOS Sans", "SF Pro Display", sans-serif', textAlign: 'left' }}
-              />
-              <ClockCircleOutlined style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', alignSelf: 'flex-start', marginTop: '6px' }} />
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4} xl={4}>
-          <Card
-            hoverable
-            onClick={() => handleFilterClick('pending')}
-            style={{
-              background: selectedFilter === 'pending' 
-                ? 'linear-gradient(135deg, #52C41A 0%, #95DE64 100%)' 
-                : 'linear-gradient(135deg, #B7EB8F 0%, #D3F261 100%)',
-              borderRadius: '10px',
-              boxShadow: selectedFilter === 'pending' 
-                ? '0 0 0 2px #52c41a, 0 10px 20px rgba(0, 0, 0, 0.15)' 
-                : '0 10px 20px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-              border: 'none',
-              overflow: 'hidden',
-              padding: '12px',
-              position: 'relative',
-              height: '120px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '12px', marginBottom: '8px', fontWeight: '500', textAlign: 'left' }}>
-              待开始项目
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <Statistic
-                value={metrics.pendingProjects}
-                valueStyle={{ color: '#fff', fontSize: '28px', fontWeight: '800', fontFamily: '"Inter", "HarmonyOS Sans", "SF Pro Display", sans-serif', textAlign: 'left' }}
-              />
-              <ClockCircleOutlined style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', alignSelf: 'flex-start', marginTop: '6px' }} />
-            </div>
-          </Card>
+    <motion.div 
+      className="dashboard-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+      >
+        <Row gutter={[20, 20]} className="metrics-row">
+          {metrics.map((metric) => (
+            <Col xs={24} sm={12} md={8} lg={4} xl={4} key={metric.key} style={{ flex: '1 1 200px' }}>
+              <motion.div variants={item} style={{ height: '100%' }}>
+                <Card 
+                  hoverable 
+                  className={`metric-card-vibrant ${selectedFilter === metric.key ? 'active' : ''}`}
+                  onClick={() => handleFilterClick(metric.key)}
+                  styles={{ body: { padding: '24px' } }}
+                  style={{ 
+                    background: metric.gradient,
+                    border: 'none',
+                    height: '100%',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div className="metric-icon-bg">
+                    {metric.icon}
+                  </div>
+                  <div style={{ position: 'relative', zIndex: 2 }}>
+                    <div style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: 14, marginBottom: 8, fontWeight: 500 }}>
+                      {metric.label}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                      <span style={{ color: '#FFFFFF', fontSize: 32, fontWeight: 800 }}>{metric.count}</span>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: 14 }}>个</span>
+                    </div>
+                  </div>
+                  <div className="metric-card-decoration" />
+                </Card>
+              </motion.div>
+            </Col>
+          ))}
+        </Row>
+      </motion.div>
+
+      <Row gutter={[20, 20]} style={{ marginTop: 24 }}>
+        <Col span={24}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedFilter}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+            >
+              <Card 
+                className="main-gantt-card"
+                title={
+                  <div className="card-title-wrapper">
+                    <Space size="middle">
+                      <span className="title-indicator" />
+                      <span style={{ fontWeight: 700, fontSize: 16 }}>项目进度甘特图</span>
+                      {selectedFilter !== 'all' && (
+                        <Tag 
+                          closable 
+                          onClose={() => setSelectedFilter('all')} 
+                          color="blue"
+                          style={{ borderRadius: 4, padding: '2px 10px' }}
+                        >
+                          视图: {metrics.find(m => m.key === selectedFilter)?.label}
+                        </Tag>
+                      )}
+                    </Space>
+                  </div>
+                }
+              >
+                <MasterGantt projects={filteredProjects} />
+              </Card>
+            </motion.div>
+          </AnimatePresence>
         </Col>
       </Row>
-
-      <Card 
-        title="项目全景甘特图" 
-        style={{ 
-          marginTop: 24, 
-          borderRadius: '12px',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-          backgroundColor: '#ffffff',
-          padding: '0'
-        }}
-      >
-        <MasterGantt projects={filteredProjects} />
-      </Card>
-    </div>
+    </motion.div>
   )
 }
 

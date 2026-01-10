@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Button, Space, Table, Tag, message, Modal, Input, Select } from 'antd'
+import { Card, Button, Space, Table, Tag, Modal, Input, Select, App as AntApp } from 'antd'
 import { ImportOutlined, ClearOutlined, FileTextOutlined } from '@ant-design/icons'
 import { Task } from '../../types'
 import useStore from '../../store/useStore'
@@ -20,6 +20,7 @@ interface ParsedTask {
 
 function SmartParser() {
   const { addTask, taskTypes } = useStore()
+  const { message } = AntApp.useApp()
   const [inputText, setInputText] = useState('')
   const [parsedTasks, setParsedTasks] = useState<ParsedTask[]>([])
   const [importModalVisible, setImportModalVisible] = useState(false)

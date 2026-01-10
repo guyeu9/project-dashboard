@@ -6,6 +6,7 @@ import DataManagement from './pages/DataManagement'
 import ResourceSchedule from './pages/ResourceSchedule'
 import ProjectManagement from './pages/ProjectManagement'
 import SmartParserPage from './pages/SmartParser'
+import SettingsPage from './pages/Settings'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/data-management" element={<DataManagement />} />
           <Route path="/resource-schedule" element={<ResourceSchedule />} />
           <Route path="/project-management" element={<ProjectManagement />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </CustomLayout>
     </BrowserRouter>

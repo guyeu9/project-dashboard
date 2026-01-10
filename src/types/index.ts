@@ -1,7 +1,7 @@
 export interface Project {
   id: string
   name: string
-  status: 'normal' | 'delayed' | 'risk'
+  status: 'normal' | 'delayed' | 'risk' | 'completed' | 'pending'
   progress: number
   startDate: string
   endDate: string

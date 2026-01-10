@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Card, Table, Button, Tag, Modal, Form, DatePicker, Input, Select, Space, InputNumber, message } from 'antd'
+import { useState, useEffect } from 'react'
+import { Card, Table, Button, Tag, Modal, Form, DatePicker, Input, Select, Space, InputNumber, App as AntApp } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { Task, DailyTaskRecord } from '../../types'
@@ -11,13 +11,21 @@ interface DailyProgressManagerProps {
   task: Task
   project: any
   onUpdate: (taskId: string, records: DailyTaskRecord[]) => void
+  isAdmin: boolean
 }
 
-function DailyProgressManager({ task, project, onUpdate }: DailyProgressManagerProps) {
+function DailyProgressManager({ task, project, onUpdate, isAdmin }: DailyProgressManagerProps) {
+  const { message } = AntApp.useApp()
   const [records, setRecords] = useState<DailyTaskRecord[]>(task.dailyRecords || [])
   const [modalVisible, setModalVisible] = useState(false)
   const [editingRecord, setEditingRecord] = useState<DailyTaskRecord | null>(null)
+  const [deleteRecord, setDeleteRecord] = useState<DailyTaskRecord | null>(null)
   const [form] = Form.useForm()
+
+  // 保证当任务或其每日记录从外部更新时，本地列表保持同步
+  useEffect(() => {
+    setRecords(task.dailyRecords || [])
+  }, [task.id, task.dailyRecords])
 
   const getStatusColor = (status: string) => {
     const colorMap = {
@@ -38,12 +46,20 @@ function DailyProgressManager({ task, project, onUpdate }: DailyProgressManagerP
   }
 
   const handleAdd = () => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以编辑每日进度')
+      return
+    }
     setEditingRecord(null)
     form.resetFields()
     setModalVisible(true)
   }
 
   const handleEdit = (record: DailyTaskRecord) => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以编辑每日进度')
+      return
+    }
     setEditingRecord(record)
     form.setFieldsValue({
       date: dayjs(record.date),
@@ -56,25 +72,25 @@ function DailyProgressManager({ task, project, onUpdate }: DailyProgressManagerP
   }
 
   const handleDelete = (record: DailyTaskRecord) => {
-    Modal.confirm({
-      title: '确认删除',
-      content: `确定要删除 ${record.date} 的进度记录吗？`,
-      onOk: () => {
-        const newRecords = records.filter(r => r.date !== record.date)
-        setRecords(newRecords)
-        onUpdate(task.id, newRecords)
-      },
-    })
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以编辑每日进度')
+      return
+    }
+    setDeleteRecord(record)
   }
 
   const handleSave = () => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以编辑每日进度')
+      return
+    }
     form.validateFields().then((values) => {
       const newRecord: DailyTaskRecord = {
         date: values.date.format('YYYY-MM-DD'),
-        progress: values.progress,
+        progress: values.progress || 0,
         status: values.status,
-        content: values.content,
-        assignees: values.assignees,
+        content: values.content || '',
+        assignees: values.assignees || [],
       }
 
       let newRecords: DailyTaskRecord[]
@@ -112,6 +128,17 @@ function DailyProgressManager({ task, project, onUpdate }: DailyProgressManagerP
   const handleCancel = () => {
     setModalVisible(false)
     form.resetFields()
+  }
+
+  const handleConfirmDelete = () => {
+    if (!deleteRecord) {
+      return
+    }
+    const newRecords = records.filter(r => r.date !== deleteRecord.date)
+    setRecords(newRecords)
+    onUpdate(task.id, newRecords)
+    setDeleteRecord(null)
+    message.success('进度记录已删除')
   }
 
   const columns = [
@@ -217,7 +244,8 @@ function DailyProgressManager({ task, project, onUpdate }: DailyProgressManagerP
         open={modalVisible}
         onOk={handleSave}
         onCancel={handleCancel}
-        width={600}
+        width={720}
+        className="compact-modal"
       >
         <Form
           form={form}
@@ -227,6 +255,7 @@ function DailyProgressManager({ task, project, onUpdate }: DailyProgressManagerP
             progress: 0,
             assignees: [],
           }}
+          className="compact-form"
         >
           <Form.Item
             label="日期"
@@ -239,7 +268,6 @@ function DailyProgressManager({ task, project, onUpdate }: DailyProgressManagerP
           <Form.Item
             label="进度"
             name="progress"
-            rules={[{ required: true, message: '请输入进度' }]}
           >
             <InputNumber
               min={0}
@@ -264,7 +292,6 @@ function DailyProgressManager({ task, project, onUpdate }: DailyProgressManagerP
           <Form.Item
             label="内容"
             name="content"
-            rules={[{ required: true, message: '请输入进度内容' }]}
           >
             <TextArea
               rows={3}
@@ -298,6 +325,17 @@ function DailyProgressManager({ task, project, onUpdate }: DailyProgressManagerP
             </Select>
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="确认删除"
+        open={!!deleteRecord}
+        onOk={handleConfirmDelete}
+        onCancel={() => setDeleteRecord(null)}
+        okText="删除"
+        okButtonProps={{ danger: true }}
+      >
+        <p>确定要删除 {deleteRecord?.date} 的进度记录吗？</p>
       </Modal>
     </div>
   )
