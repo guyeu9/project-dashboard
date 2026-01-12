@@ -27,14 +27,16 @@ interface TaskEditModalProps {
 function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin = true, onSave, onAdd, onCancel }: TaskEditModalProps) {
   const [form] = Form.useForm()
   const [isEditMode, setIsEditMode] = useState(false)
-  const selectedTypeId = Form.useWatch('type', form)
+  const [selectedTypeId, setSelectedTypeId] = useState<string>(task?.type.id || taskTypes[0]?.id || '')
 
   useEffect(() => {
     setIsEditMode(!!task)
     if (task) {
+      const taskTypeId = task.type.id
+      setSelectedTypeId(taskTypeId)
       form.setFieldsValue({
         name: task.name,
-        type: task.type.id,
+        type: taskTypeId,
         status: task.status,
         progress: task.progress,
         startDate: dayjs(task.startDate),
@@ -43,9 +45,19 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
         remark: task.remark || '',
       })
     } else {
+      const defaultTypeId = taskTypes[0]?.id || ''
+      setSelectedTypeId(defaultTypeId)
+      form.setFieldsValue({
+        type: defaultTypeId
+      })
       form.resetFields()
     }
-  }, [task, form])
+  }, [task, form, taskTypes])
+
+  // 监听表单中type字段的变化，更新selectedTypeId
+  const handleTypeChange = (value: string) => {
+    setSelectedTypeId(value)
+  }
 
   const handleOk = () => {
     if (!isAdmin) {
@@ -156,7 +168,11 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
               name="type"
               rules={[{ required: true, message: '请选择任务类型' }]}
             >
-              <Select placeholder="请选择任务类型" disabled={!isAdmin}>
+              <Select 
+                placeholder="请选择任务类型" 
+                disabled={!isAdmin}
+                onChange={handleTypeChange}
+              >
                 {taskTypes.map(type => (
                   <Option key={type.id} value={type.id}>
                     {type.name}
@@ -174,9 +190,11 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
               name="status"
             >
               <Select placeholder="请选择任务状态" disabled={!isAdmin}>
+                <Option value="pending">待开始</Option>
                 <Option value="normal">正常</Option>
-                <Option value="blocked">阻塞</Option>
-                <Option value="resolved">已解决</Option>
+                <Option value="risk">风险</Option>
+                <Option value="delayed">延期</Option>
+                <Option value="completed">已完成</Option>
               </Select>
             </Form.Item>
           </Col>

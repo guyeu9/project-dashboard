@@ -95,6 +95,7 @@ interface AppState {
   addTask: (task: Task) => void
   updateTask: (taskId: string, updates: Partial<Task>) => void
   deleteTask: (taskId: string) => void
+  deleteProject: (projectId: string) => void
   initializeData: () => void
 }
 
@@ -105,12 +106,20 @@ const API_BASE_URL =
 
 const API_URL = `${API_BASE_URL}/api/data`
 
-const defaultData: { projects: Project[]; tasks: Task[] } = {
+const defaultData: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[] } = {
   projects: mockProjects,
   tasks: mockTasks,
+  taskTypes: [
+    { id: '1', name: '开发排期', color: '#1890ff', enabled: true },
+    { id: '2', name: '开发联调', color: '#52c41a', enabled: true },
+    { id: '3', name: '测试排期', color: '#faad14', enabled: true },
+    { id: '4', name: '测试联调', color: '#f5222d', enabled: true },
+    { id: '5', name: '产品UAT', color: '#722ed1', enabled: true },
+    { id: '6', name: '上线', color: '#13c2c2', enabled: true },
+  ]
 }
 
-const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[] } | null> => {
+const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[]; taskTypes: TaskType[] } | null> => {
   try {
     const res = await fetch(API_URL, { method: 'GET' })
     if (!res.ok) {
@@ -123,6 +132,7 @@ const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[] } 
     return {
       projects: data.projects as Project[],
       tasks: data.tasks as Task[],
+      taskTypes: (data.taskTypes || defaultData.taskTypes) as TaskType[],
     }
   } catch (error) {
     console.error('从服务端加载数据失败:', error)
@@ -130,7 +140,7 @@ const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[] } 
   }
 }
 
-const saveToServer = async (data: { projects: Project[]; tasks: Task[] }) => {
+const saveToServer = async (data: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[] }) => {
   try {
     await fetch(API_URL, {
       method: 'POST',
@@ -145,8 +155,8 @@ const saveToServer = async (data: { projects: Project[]; tasks: Task[] }) => {
 }
 
 const useStore = create<AppState>((set, get) => {
-  const applyAndPersist = (data: { projects: Project[]; tasks: Task[] }) => {
-    set({ projects: data.projects, tasks: data.tasks })
+  const applyAndPersist = (data: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[] }) => {
+    set({ projects: data.projects, tasks: data.tasks, taskTypes: data.taskTypes })
     saveToServer(data)
   }
 
@@ -173,40 +183,51 @@ const useStore = create<AppState>((set, get) => {
     selectedStatus: [],
     
     setProjects: (projects) => {
-      const data = { projects, tasks: get().tasks }
+      const data = { projects, tasks: get().tasks, taskTypes: get().taskTypes }
       applyAndPersist(data)
     },
     setTasks: (tasks) => {
-      const data = { projects: get().projects, tasks }
+      const data = { projects: get().projects, tasks, taskTypes: get().taskTypes }
       applyAndPersist(data)
     },
-    setTaskTypes: (taskTypes) => set({ taskTypes }),
+    setTaskTypes: (taskTypes) => {
+      const data = { projects: get().projects, tasks: get().tasks, taskTypes }
+      applyAndPersist(data)
+    },
     setSelectedProjectId: (projectId) => set({ selectedProjectId: projectId }),
     setSelectedStatus: (status) => set({ selectedStatus: status }),
     
     addProject: (project) => {
       const newProjects = [...get().projects, project]
-      const data = { projects: newProjects, tasks: get().tasks }
+      const data = { projects: newProjects, tasks: get().tasks, taskTypes: get().taskTypes }
       applyAndPersist(data)
     },
     updateProject: (projectId, updates) => {
       const newProjects = get().projects.map((p) => (p.id === projectId ? { ...p, ...updates } : p))
-      const data = { projects: newProjects, tasks: get().tasks }
+      const data = { projects: newProjects, tasks: get().tasks, taskTypes: get().taskTypes }
       applyAndPersist(data)
     },
     addTask: (task) => {
       const newTasks = [...get().tasks, task]
-      const data = { projects: get().projects, tasks: newTasks }
+      const data = { projects: get().projects, tasks: newTasks, taskTypes: get().taskTypes }
       applyAndPersist(data)
     },
     updateTask: (taskId, updates) => {
       const newTasks = get().tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t))
-      const data = { projects: get().projects, tasks: newTasks }
+      const data = { projects: get().projects, tasks: newTasks, taskTypes: get().taskTypes }
       applyAndPersist(data)
     },
     deleteTask: (taskId) => {
       const newTasks = get().tasks.filter((t) => t.id !== taskId)
-      const data = { projects: get().projects, tasks: newTasks }
+      const data = { projects: get().projects, tasks: newTasks, taskTypes: get().taskTypes }
+      applyAndPersist(data)
+    },
+    deleteProject: (projectId) => {
+      // 删除项目
+      const newProjects = get().projects.filter(p => p.id !== projectId)
+      // 删除关联任务
+      const newTasks = get().tasks.filter(t => t.projectId !== projectId)
+      const data = { projects: newProjects, tasks: newTasks, taskTypes: get().taskTypes }
       applyAndPersist(data)
     },
     initializeData: () => {

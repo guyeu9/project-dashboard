@@ -29,11 +29,13 @@ function DailyProgressManager({ task, project, onUpdate, isAdmin }: DailyProgres
 
   const getStatusColor = (status: string) => {
     const colorMap = {
-      normal: 'green',
-      risk: 'orange',
-      delayed: 'red',
+      normal: 'var(--success-color)',    // 正常 → 绿色
+      risk: 'var(--warning-color)',       // 风险 → 黄色
+      delayed: 'var(--error-color)',     // 延期 → 红色
+      completed: '#595959',             // 已完成 → 灰色
+      pending: 'var(--pending-color)',       // 待开始 → 紫色
     }
-    return colorMap[status as keyof typeof colorMap] || 'default'
+    return colorMap[status as keyof typeof colorMap] || 'var(--success-color)'
   }
 
   const getStatusText = (status: string) => {

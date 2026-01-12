@@ -152,26 +152,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
 
   // 获取项目的最新风险状态
   const getProjectRiskStatus = (project: Project, projectTasks: Task[] = []): Project['status'] => {
-    let latestRiskRecord: any = null
-    let latestDate = ''
-    
-    if (projectTasks && Array.isArray(projectTasks)) {
-      projectTasks.forEach(task => {
-        if (task.dailyRecords) {
-          task.dailyRecords.forEach(record => {
-            if ((record.status === 'risk' || record.status === 'delayed') && record.date > latestDate) {
-              latestDate = record.date
-              latestRiskRecord = record
-            }
-          })
-        }
-      })
-    }
-    
-    if (latestRiskRecord) {
-      return latestRiskRecord.status as Project['status']
-    }
-    
+    // 优先使用项目自身状态
     return project.status
   }
 
@@ -214,22 +195,26 @@ function MasterGantt({ projects }: MasterGanttProps) {
   const getProjectBarStyle = (project: Project, status?: Project['status']) => {
     const finalStatus = status || project.status
     
-    let backgroundColor = '#f6ffed' // 正常淡绿
-    let borderColor = '#b7eb8f'
-    let textColor = '#389e0d'
+    let backgroundColor = 'var(--success-color)' // 正常 - 绿色
+    let borderColor = 'var(--success-color)'
+    let textColor = '#ffffff'
 
     if (finalStatus === 'risk') {
-      backgroundColor = '#fff1f0' // 风险淡红
-      borderColor = '#ffa39e'
-      textColor = '#cf1322'
+      backgroundColor = 'var(--warning-color)' // 风险 - 黄色
+      borderColor = 'var(--warning-color)'
+      textColor = '#ffffff'
     } else if (finalStatus === 'delayed') {
-      backgroundColor = '#fffbe6' // 延期淡黄
-      borderColor = '#ffe58f'
-      textColor = '#d48806'
+      backgroundColor = 'var(--error-color)' // 延期 - 红色
+      borderColor = 'var(--error-color)'
+      textColor = '#ffffff'
     } else if (finalStatus === 'completed') {
-      backgroundColor = '#e6f7ff'
-      borderColor = '#91d5ff'
-      textColor = '#096dd9'
+      backgroundColor = '#595959' // 已完成 - 灰色
+      borderColor = '#595959'
+      textColor = '#ffffff'
+    } else if (finalStatus === 'pending') {
+      backgroundColor = 'var(--pending-color)' // 待开始 - 紫色
+      borderColor = 'var(--pending-color)'
+      textColor = '#ffffff'
     }
 
     return {
@@ -583,8 +568,9 @@ function MasterGantt({ projects }: MasterGanttProps) {
                     key={task.id} 
                     className="sidebar-row task-row"
                     ref={handleSidebarRowRef(task.id)}
+                    style={{ minHeight: 32, height: 'fit-content' }}
                   >
-                    <div className="task-info" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden' }}>
+                    <div className="task-info" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden', height: '100%' }}>
                       <Tag 
                         color={task.type.color} 
                         style={{ 
@@ -678,7 +664,13 @@ function MasterGantt({ projects }: MasterGanttProps) {
                           <div><strong>{project.name}</strong></div>
                           <div>负责人: {project.owner}</div>
                           <div>进度: {project.progress}%</div>
-                          <div>状态: {projectBarPosition.status === 'normal' ? '正常' : projectBarPosition.status === 'risk' ? '风险' : '延期'}</div>
+                          <div>状态: {
+                            projectBarPosition.status === 'normal' ? '正常' :
+                            projectBarPosition.status === 'risk' ? '风险' :
+                            projectBarPosition.status === 'delayed' ? '延期' :
+                            projectBarPosition.status === 'completed' ? '已完成' :
+                            '待开始'
+                          }</div>
                           {riskDates.length > 0 && (
                             <div>风险日期: {riskDates.join(' / ')}</div>
                           )}
@@ -691,6 +683,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
                           ...getProjectBarStyle(project, projectBarPosition.status),
                           left: `${projectBarPosition.left}px`,
                           width: `${projectBarPosition.width}px`,
+                          top: `${((rowHeights[project.id] || 64) - 40) / 2}px`,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -758,7 +751,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
                       <div 
                         key={task.id} 
                         className="timeline-row task-row"
-                        style={{ height: rowHeights[task.id] || 48 }}
+                        style={{ height: rowHeights[task.id] || 32 }}
                       >
                         <div className="timeline-grid">
                           {days.map((day) => (

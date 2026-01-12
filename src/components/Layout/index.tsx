@@ -199,32 +199,33 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
         okText={role === 'admin' ? '退出登录' : '登录'}
         confirmLoading={loginLoading}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{ username: 'admin', password: 'admin' }}
-          style={{ display: role === 'admin' ? 'none' : 'block' }}
-        >
-          <Form.Item
-            label="账号"
-            name="username"
-            rules={[{ required: true, message: '请输入账号' }]}
+        {role !== 'admin' && (
+          <Form
+            form={form}
+            layout="vertical"
+            initialValues={{ username: 'admin', password: 'admin' }}
           >
-            <Input placeholder="请输入账号，默认为 admin" />
-          </Form.Item>
-          <Form.Item
-            label="密码"
-            name="password"
-            rules={[{ required: true, message: '请输入密码' }]}
-          >
-            <Input.Password placeholder="请输入密码，默认为 admin" />
-          </Form.Item>
-          <Space style={{ marginTop: 8 }}>
-            <Button type="link" onClick={handleQuickAdmin}>
-              管理员一键登录
-            </Button>
-          </Space>
-        </Form>
+            <Form.Item
+              label="账号"
+              name="username"
+              rules={[{ required: true, message: '请输入账号' }]}
+            >
+              <Input placeholder="请输入账号，默认为 admin" />
+            </Form.Item>
+            <Form.Item
+              label="密码"
+              name="password"
+              rules={[{ required: true, message: '请输入密码' }]}
+            >
+              <Input.Password placeholder="请输入密码，默认为 admin" />
+            </Form.Item>
+            <Space style={{ marginTop: 8 }}>
+              <Button type="link" onClick={handleQuickAdmin}>
+                管理员一键登录
+              </Button>
+            </Space>
+          </Form>
+        )}
         {role === 'admin' && (
           <div>
             <p>当前已以 <strong>管理员</strong> 身份登录。</p>

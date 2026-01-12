@@ -6,7 +6,7 @@
       "status": "normal",
       "progress": 75,
       "startDate": "2026-01-01",
-      "endDate": "2026-01-29",
+      "endDate": "2026-01-67",
       "partners": [
         "360金条",
         "合作方B"
@@ -22,7 +22,7 @@
       "owner": "项目经理",
       "productManager": "产品经理A",
       "pmo": "PMO-A",
-      "remark": "重点项目，需按时上线",
+      "remark": "重点项目，需按时上线2332332",
       "chatGroupLinks": [
         "测试"
       ],
@@ -99,10 +99,10 @@
     {
       "id": "5",
       "name": "营销活动平台",
-      "status": "normal",
+      "status": "pending",
       "progress": 0,
-      "startDate": "2024-02-01",
-      "endDate": "2024-03-30",
+      "startDate": "2026-01-15",
+      "endDate": "2026-03-11",
       "partners": [
         "市场部"
       ],
@@ -115,7 +115,9 @@
       "owner": "项目经理E",
       "productManager": "产品经理E",
       "pmo": "PMO-E",
-      "remark": "121212121212122112211212"
+      "remark": "121212121212122112211212",
+      "chatGroupLinks": [],
+      "contacts": []
     }
   ],
   "tasks": [
@@ -132,10 +134,9 @@
       "status": "normal",
       "progress": 80,
       "startDate": "2026-01-01",
-      "endDate": "2026-01-10",
+      "endDate": "2026-01-13",
       "assignees": [
-        "张三",
-        "李四"
+        "张三"
       ],
       "dailyRecords": [
         {
@@ -165,7 +166,7 @@
         "color": "#52c41a",
         "enabled": true
       },
-      "status": "normal",
+      "status": "risk",
       "progress": 60,
       "startDate": "2026-01-11",
       "endDate": "2026-01-15",
@@ -278,7 +279,7 @@
         "color": "#f5222d",
         "enabled": true
       },
-      "status": "normal",
+      "status": "risk",
       "progress": 0,
       "startDate": "2026-01-26",
       "endDate": "2026-01-30",
@@ -305,6 +306,44 @@
       "assignees": [],
       "dailyProgress": "",
       "remark": ""
+    }
+  ],
+  "taskTypes": [
+    {
+      "id": "1",
+      "name": "开发排期",
+      "color": "#1890ff",
+      "enabled": true
+    },
+    {
+      "id": "2",
+      "name": "开发联调",
+      "color": "#52c41a",
+      "enabled": true
+    },
+    {
+      "id": "3",
+      "name": "测试排期",
+      "color": "#faad14",
+      "enabled": true
+    },
+    {
+      "id": "4",
+      "name": "测试联调",
+      "color": "#f5222d",
+      "enabled": true
+    },
+    {
+      "id": "5",
+      "name": "产品UAT",
+      "color": "#722ed1",
+      "enabled": true
+    },
+    {
+      "id": "6",
+      "name": "上线",
+      "color": "#13c2c2",
+      "enabled": true
     }
   ]
 }

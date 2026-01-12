@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Row, Col, Tag, Input, Space, Modal, Button, Select, App as AntApp } from 'antd'
+import { Card, Row, Col, Tag, Input, Space, Modal, Button, Select, App as AntApp, DatePicker } from 'antd'
 import { 
   EditOutlined, 
   LinkOutlined, 
@@ -57,7 +57,14 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
       return
     }
     setEditingField(field)
-    setEditValue(currentValue)
+    // 处理日期字段
+    if (field === 'startDate' || field === 'endDate') {
+      // 将日期字符串转换为Date对象
+      const date = new Date(currentValue)
+      setEditValue(date)
+    } else {
+      setEditValue(currentValue)
+    }
   }
 
   const handleFieldSave = () => {
@@ -67,8 +74,18 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
     }
     let value: any = editValue
     
+    // 处理日期字段
+    if (editingField === 'startDate' || editingField === 'endDate') {
+      // 将Date对象转换为YYYY-MM-DD格式的字符串
+      if (value instanceof Date) {
+        const year = value.getFullYear()
+        const month = String(value.getMonth() + 1).padStart(2, '0')
+        const day = String(value.getDate()).padStart(2, '0')
+        value = `${year}-${month}-${day}`
+      }
+    } 
     // 处理数组类型的字段
-    if (editingField === 'partners' || editingField === 'developers' || editingField === 'testers') {
+    else if (editingField === 'partners' || editingField === 'developers' || editingField === 'testers') {
       value = editValue.split(',').map((item: string) => item.trim()).filter((item: string) => item)
     }
     
@@ -423,9 +440,39 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               <CalendarOutlined /> 项目周期
             </div>
             <div className="info-value">
-              <span>
-                {project.startDate} ~ {project.endDate}
-              </span>
+              {editingField === 'startDate' || editingField === 'endDate' ? (
+                <Space>
+                  <DatePicker
+                    value={editValue instanceof Date ? editValue : null}
+                    onChange={(date) => setEditValue(date || '')}
+                    placeholder={editingField === 'startDate' ? '选择开始日期' : '选择结束日期'}
+                    style={{ width: '100%' }}
+                    format="YYYY-MM-DD"
+                  />
+                  <Button type="primary" size="small" onClick={handleFieldSave}>
+                    保存
+                  </Button>
+                  <Button size="small" onClick={handleFieldCancel}>
+                    取消
+                  </Button>
+                </Space>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+                  <span style={{ width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {project.startDate} ~ {project.endDate}
+                  </span>
+                  {isAdmin && (
+                    <Space style={{ marginTop: '4px' }}>
+                      <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleFieldEdit('startDate', project.startDate)}>
+                        编辑开始
+                      </Button>
+                      <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleFieldEdit('endDate', project.endDate)}>
+                        编辑结束
+                      </Button>
+                    </Space>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </Col>
@@ -492,31 +539,44 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
 
         <Col xs={24} sm={24} md={24} lg={24}>
           <div className="info-section">
-            <div className="info-label">
-              <FileTextOutlined /> 备注
+            <div className="info-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ display: 'flex', alignItems: 'center' }}>
+                <FileTextOutlined /> 备注
+              </span>
+              {isAdmin && (
+                <Button 
+                  type="link" 
+                  size="small" 
+                  icon={<EditOutlined />}
+                  onClick={() => handleFieldEdit('remark', project.remark || '')}
+                >
+                  编辑
+                </Button>
+              )}
             </div>
             <div className="info-value">
               {editingField === 'remark' ? (
-                <Space>
+                <Space direction="vertical" style={{ width: '100%' }}>
                   <TextArea
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     placeholder="请输入项目备注信息"
-                    autoSize={{ minRows: 2, maxRows: 4 }}
+                    autoSize={{ minRows: 2, maxRows: 8 }}
                     style={{ width: '100%' }}
+                    maxLength={2000}
+                    showCount
                   />
-                  <Button type="primary" size="small" onClick={handleFieldSave}>
-                    保存
-                  </Button>
-                  <Button size="small" onClick={handleFieldCancel}>
-                    取消
-                  </Button>
+                  <Space style={{ alignSelf: 'flex-end' }}>
+                    <Button type="primary" size="small" onClick={handleFieldSave}>
+                      保存
+                    </Button>
+                    <Button size="small" onClick={handleFieldCancel}>
+                      取消
+                    </Button>
+                  </Space>
                 </Space>
               ) : (
-                <div 
-                  onClick={() => isAdmin && handleFieldEdit('remark', project.remark || '')} 
-                  style={{ cursor: isAdmin ? 'pointer' : 'default' }}
-                >
+                <div>
                   {project.remark ? (
                     <div style={{ 
                       backgroundColor: '#f5f5f5', 
@@ -526,25 +586,32 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
                       fontSize: '14px',
                       lineHeight: '1.5',
                       whiteSpace: 'pre-wrap',
-                      position: 'relative'
+                      wordBreak: 'break-word',
+                      overflow: 'hidden',
+                      width: '100%',
+                      minHeight: '40px'
                     }}>
-                      {project.remark}
-                      {isAdmin && (
-                        <div style={{ position: 'absolute', right: 8, top: 8 }}>
-                          <Button type="link" size="small" icon={<EditOutlined />}>
-                            编辑
-                          </Button>
+                      <div>
+                        {project.remark}
+                      </div>
+                      {!isAdmin && (
+                        <div style={{ fontSize: '12px', color: '#999', textAlign: 'right', marginTop: '4px' }}>
+                          仅管理员可编辑
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <span className="empty-value">暂无备注，{isAdmin ? '点击添加' : '仅管理员可添加'}</span>
-                      {isAdmin && (
-                        <Button type="link" size="small" icon={<EditOutlined />}>
-                          编辑
-                        </Button>
-                      )}
+                    <div style={{ 
+                      padding: '12px 16px', 
+                      borderRadius: '6px',
+                      border: '1px dashed #d9d9d9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      backgroundColor: '#fafafa',
+                      width: '100%'
+                    }}>
+                      <span className="empty-value" style={{ color: '#999' }}>暂无备注</span>
                     </div>
                   )}
                 </div>

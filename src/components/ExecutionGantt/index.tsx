@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react'
-import { Table, Button, Space, Tag, Progress, Avatar } from 'antd'
+import { Table, Button, Space, Tag, Progress, Avatar, Popconfirm } from 'antd'
 import { LeftOutlined, RightOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { Task } from '../../types'
@@ -9,9 +9,10 @@ interface ExecutionGanttProps {
   tasks: Task[]
   onTaskDoubleClick: (task: Task) => void
   onViewHistory?: (taskId: string) => void
+  onDeleteTask?: (taskId: string) => void
 }
 
-function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory }: ExecutionGanttProps) {
+function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask }: ExecutionGanttProps) {
   const [currentDate, setCurrentDate] = useState(dayjs())
   const tableRef = useRef<HTMLDivElement>(null)
 
@@ -66,20 +67,22 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory }: ExecutionGa
         ),
       },
       {
-        title: '状态',
-        dataIndex: 'status',
-        key: 'status',
-        width: 100,
-        render: (status: string) => {
-          const statusConfig = {
-            normal: { color: 'green', text: '正常' },
-            blocked: { color: 'red', text: '阻塞' },
-            resolved: { color: 'blue', text: '已解决' },
-          }
-          const config = statusConfig[status as keyof typeof statusConfig]
-          return <Tag color={config.color}>{config.text}</Tag>
-        },
-      },
+              title: '状态',
+              dataIndex: 'status',
+              key: 'status',
+              width: 100,
+              render: (status: string) => {
+                const statusConfig = {
+                  normal: { color: 'var(--success-color)', text: '正常' },
+                  risk: { color: 'var(--warning-color)', text: '风险' },
+                  delayed: { color: 'var(--error-color)', text: '延期' },
+                  completed: { color: '#595959', text: '已完成' },
+                  pending: { color: 'var(--pending-color)', text: '待开始' },
+                }
+                const config = statusConfig[status as keyof typeof statusConfig]
+                return <Tag color={config.color}>{config.text}</Tag>
+              },
+            },
       {
         title: '操作',
         key: 'action',
@@ -102,6 +105,17 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory }: ExecutionGa
             >
               历史
             </Button>
+            <Popconfirm
+              title="确认删除该任务？"
+              okText="删除"
+              cancelText="取消"
+              onConfirm={() => onDeleteTask?.(record.id)}
+              okButtonProps={{ danger: true }}
+            >
+              <Button type="link" size="small" danger disabled={!onDeleteTask}>
+                删除
+              </Button>
+            </Popconfirm>
           </Space>
         ),
       },
@@ -143,11 +157,13 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory }: ExecutionGa
 
   const getStatusColor = (status: string) => {
     const colorMap = {
-      normal: '#52c41a',
-      blocked: '#ff4d4f',
-      resolved: '#1890ff',
+      normal: 'var(--success-color)',      // 正常 → 绿色
+      risk: 'var(--warning-color)',         // 风险 → 黄色
+      delayed: 'var(--error-color)',      // 延期 → 红色
+      completed: '#595959',    // 已完成 → 灰色
+      pending: 'var(--pending-color)',      // 待开始 → 紫色
     }
-    return colorMap[status as keyof typeof colorMap] || '#52c41a'
+    return colorMap[status as keyof typeof colorMap] || 'var(--success-color)'
   }
 
   const handlePrevMonth = () => {

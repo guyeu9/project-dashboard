@@ -130,12 +130,12 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
         }}
         className="compact-form"
       >
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
           <Form.Item
             label="项目名称"
             name="name"
             rules={[{ required: true, message: '请输入项目名称' }]}
-            style={{ gridColumn: 'span 2' }}
+            style={{ gridColumn: 'span 1' }}
           >
             <Input placeholder="请输入项目名称" />
           </Form.Item>
@@ -143,6 +143,7 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
           <Form.Item
             label="项目状态"
             name="status"
+            style={{ gridColumn: 'span 1' }}
           >
             <Select placeholder="请选择项目状态">
               <Option value="pending">待开始</Option>
@@ -156,13 +157,39 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
           <Form.Item
             label="当前进度 (%)"
             name="progress"
+            style={{ gridColumn: 'span 1' }}
           >
             <InputNumber min={0} max={100} placeholder="0-100" style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
+            label="负责人"
+            name="owner"
+            style={{ gridColumn: 'span 1' }}
+          >
+            <Input placeholder="请输入负责人" />
+          </Form.Item>
+
+          <Form.Item
+            label="产品经理"
+            name="productManager"
+            style={{ gridColumn: 'span 1' }}
+          >
+            <Input placeholder="请输入产品经理" />
+          </Form.Item>
+
+          <Form.Item
+            label="PMO"
+            name="pmo"
+            style={{ gridColumn: 'span 1' }}
+          >
+            <Input placeholder="请输入PMO负责人" />
+          </Form.Item>
+
+          <Form.Item
             label="开始日期"
             name="startDate"
+            style={{ gridColumn: 'span 1' }}
           >
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
@@ -170,34 +197,15 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
           <Form.Item
             label="结束日期"
             name="endDate"
+            style={{ gridColumn: 'span 1' }}
           >
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
-            label="负责人"
-            name="owner"
-          >
-            <Input placeholder="请输入负责人" />
-          </Form.Item>
-
-          <Form.Item
-            label="PMO"
-            name="pmo"
-          >
-            <Input placeholder="请输入PMO负责人" />
-          </Form.Item>
-
-          <Form.Item
-            label="产品经理"
-            name="productManager"
-          >
-            <Input placeholder="请输入产品经理" />
-          </Form.Item>
-
-          <Form.Item
             label="合作方"
             name="partners"
+            style={{ gridColumn: 'span 1' }}
           >
             <Select
               mode="tags"
@@ -213,7 +221,7 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
           <Form.Item
             label="开发人员"
             name="developers"
-            style={{ gridColumn: 'span 2' }}
+            style={{ gridColumn: 'span 1' }}
           >
             <Select
               mode="tags"
@@ -229,7 +237,7 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
           <Form.Item
             label="测试人员"
             name="testers"
-            style={{ gridColumn: 'span 2' }}
+            style={{ gridColumn: 'span 1' }}
           >
             <Select
               mode="tags"
@@ -245,11 +253,11 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
           <Form.Item
             label="联调群链接"
             name="chatGroupLinks"
-            style={{ gridColumn: 'span 2' }}
+            style={{ gridColumn: 'span 1' }}
           >
             <Select
               mode="tags"
-              placeholder="请输入联调群链接，例如飞书/企微/钉钉群 URL"
+              placeholder="请输入联调群链接"
               style={{ width: '100%' }}
             />
           </Form.Item>
@@ -260,23 +268,24 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
             style={{ gridColumn: 'span 2' }}
           >
             <TextArea
-              rows={3}
+              rows={2}
               placeholder="每行一个，例如：张三 (产品) - 138xxxx"
               maxLength={1000}
               showCount
+              autoSize={{ minRows: 2, maxRows: 4 }}
             />
           </Form.Item>
 
           <Form.Item
             label="备注"
             name="remark"
-            style={{ gridColumn: 'span 2' }}
+            style={{ gridColumn: 'span 3' }}
           >
             <TextArea
-              rows={3}
               placeholder="请输入项目备注"
-              maxLength={500}
+              maxLength={2000}
               showCount
+              autoSize={{ minRows: 2, maxRows: 8 }}
             />
           </Form.Item>
         </div>

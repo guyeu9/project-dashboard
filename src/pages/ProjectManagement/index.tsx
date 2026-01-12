@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Card, Row, Col, Tag, Button, Space, Select, DatePicker, Input, Empty, Radio, Progress, Spin, App as AntApp } from 'antd'
+import { Card, Row, Col, Tag, Button, Space, Select, DatePicker, Input, Empty, Radio, Progress, Spin, App as AntApp, Popconfirm } from 'antd'
 import {
   SearchOutlined,
   AppstoreOutlined,
@@ -21,7 +21,7 @@ const { Option } = Select
 const { RangePicker } = DatePicker
 
 function ProjectManagement() {
-  const { projects, addProject, updateProject } = useStore()
+  const { projects, addProject, updateProject, deleteProject } = useStore()
   const { role } = useAuthStore()
   const { message } = AntApp.useApp()
   const navigate = useNavigate()
@@ -151,7 +151,7 @@ function ProjectManagement() {
       normal: 'var(--success-color)',
       delayed: 'var(--error-color)', // 延期统一红色
       risk: 'var(--warning-color)',   // 风险/黄色
-      pending: 'var(--info-color)',
+      pending: 'var(--pending-color)', // 待开始/紫色
       completed: '#595959',
     }
     return colorMap[status as keyof typeof colorMap] || 'var(--neutral-secondary)'
@@ -192,18 +192,40 @@ function ProjectManagement() {
               >
                 {getStatusText(project.status)}
               </Tag>
-              <Button
-                type="text"
-                size="small"
-                icon={<SettingOutlined style={{ fontSize: '14px' }} />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEditProject(project);
-                }}
-                className="edit-btn-v3"
-              >
-                设置
-              </Button>
+              <Space>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<SettingOutlined style={{ fontSize: '14px' }} />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditProject(project);
+                  }}
+                  className="edit-btn-v3"
+                >
+                  设置
+                </Button>
+                <Popconfirm
+                  title="确认删除该项目？"
+                  okText="删除"
+                  cancelText="取消"
+                  onConfirm={(e) => {
+                    e.stopPropagation();
+                    deleteProject(project.id);
+                  }}
+                  okButtonProps={{ danger: true }}
+                >
+                  <Button
+                    type="text"
+                    size="small"
+                    danger
+                    onClick={(e) => e.stopPropagation()}
+                    className="delete-btn-v3"
+                  >
+                    删除
+                  </Button>
+                </Popconfirm>
+              </Space>
             </div>
             <h3 className="project-name-v3">{project.name}</h3>
             <div className="card-body-v3">
@@ -320,6 +342,26 @@ function ProjectManagement() {
               >
                 管理
               </Button>
+              <Popconfirm
+                title="确认删除该项目？"
+                okText="删除"
+                cancelText="取消"
+                onConfirm={(e) => {
+                  e.stopPropagation();
+                  deleteProject(project.id);
+                }}
+                okButtonProps={{ danger: true }}
+              >
+                <Button 
+                  type="text" 
+                  size="small" 
+                  danger
+                  onClick={(e) => e.stopPropagation()}
+                  className="delete-btn-list"
+                >
+                  删除
+                </Button>
+              </Popconfirm>
             </Space>
           </div>
         </div>

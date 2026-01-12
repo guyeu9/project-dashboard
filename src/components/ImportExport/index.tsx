@@ -214,13 +214,13 @@ function ImportExport() {
       key: 'status',
       render: (status: string) => {
         const statusConfig = {
-          normal: { color: 'green', text: '正常' },
-          delayed: { color: 'red', text: '延期' },
-          risk: { color: 'orange', text: '风险' },
-          completed: { color: 'blue', text: '已完成' },
-          pending: { color: 'default', text: '待处理' },
+          normal: { color: 'var(--success-color)', text: '正常' },
+          delayed: { color: 'var(--error-color)', text: '延期' },
+          risk: { color: 'var(--warning-color)', text: '风险' },
+          completed: { color: '#595959', text: '已完成' },
+          pending: { color: 'var(--pending-color)', text: '待开始' },
         }
-        const config = statusConfig[status as keyof typeof statusConfig] || { color: 'default', text: status }
+        const config = statusConfig[status as keyof typeof statusConfig] || { color: 'var(--success-color)', text: status }
         return <Tag color={config.color}>{config.text}</Tag>
       },
     },

@@ -313,8 +313,20 @@ function ResourceHeatmap({ tasks }: ResourceHeatmapProps) {
                       <div key={task.id} className="task-item">
                         <div className="task-header">
                           <span className="task-name">{task.name}</span>
-                          <Tag color={task.status === 'normal' ? 'green' : task.status === 'blocked' ? 'red' : 'blue'}>
-                            {task.status === 'normal' ? '正常' : task.status === 'blocked' ? '阻塞' : '已解决'}
+                          <Tag color={
+                            task.status === 'normal' ? 'var(--success-color)' : 
+                            task.status === 'risk' ? 'var(--warning-color)' : 
+                            task.status === 'delayed' ? 'var(--error-color)' : 
+                            task.status === 'completed' ? '#595959' : 
+                            task.status === 'pending' ? 'var(--pending-color)' : 
+                            'default'
+                          }>
+                            {task.status === 'normal' ? '正常' : 
+                             task.status === 'risk' ? '风险' : 
+                             task.status === 'delayed' ? '延期' : 
+                             task.status === 'completed' ? '已完成' : 
+                             task.status === 'pending' ? '待开始' : 
+                             task.status}
                           </Tag>
                         </div>
                         <div className="task-project">

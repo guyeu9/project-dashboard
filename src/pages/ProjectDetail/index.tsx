@@ -100,6 +100,15 @@ function ProjectDetail() {
     setEditModalVisible(false)
   }
 
+  const handleDeleteTask = (taskId: string) => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以删除任务')
+      return
+    }
+    deleteTask(taskId)
+    message.success('任务已删除')
+  }
+
   const handleViewHistory = (taskId: string) => {
     setSelectedTaskId(taskId)
     setHistoryVisible(true)
@@ -177,6 +186,7 @@ function ProjectDetail() {
             tasks={projectTasks}
             onTaskDoubleClick={handleTaskDoubleClick}
             onViewHistory={handleViewHistory}
+            onDeleteTask={handleDeleteTask}
           />
         </Card>
       ),

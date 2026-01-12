@@ -29,7 +29,7 @@ export interface Task {
   projectId: string
   name: string
   type: TaskType
-  status: 'normal' | 'blocked' | 'resolved'
+  status: 'normal' | 'delayed' | 'risk' | 'completed' | 'pending'
   progress: number
   startDate: string
   endDate: string
