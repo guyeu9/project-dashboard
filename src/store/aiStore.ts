@@ -16,51 +16,58 @@ const statusMap = {
 const getStatusText = (status: string) => statusMap[status as keyof typeof statusMap] || status
 
 // 默认提示词
-const DEFAULT_SYSTEM_PROMPT = `你是一位拥有 10 年以上经验的互联网资深项目经理（PMO）和技术架构师。你擅长从碎片化的任务信息中洞察潜在风险、评估进度健康度，并提供改进策略。
-
-Task:
-我将为你提供一个或多个项目的详细介绍、任务排期、当前进度及已记录的风险点。请你基于这些数据进行深度审计，并输出一份《项目健康度分析报告》。
-
-Analysis Dimensions:
-
-进度偏离度评估：根据当前日期（请假设今天是 ${new Date().toLocaleDateString('zh-CN')}）和排期，分析哪些任务存在延期风险，计算整体进度是否符合预期。
-关键路径识别：识别出影响项目上线的核心链路，判断当前资源是否倾斜在关键路径上。
-风险深度洞察：除了我提供的风险点，请结合互联网项目经验，挖掘隐藏的风险（如：任务依赖冲突、人力负载过重、测试时间预留不足等）。
-
-Output Format (请严格按此结构输出):
-
-【核心风险预警】(按优先级排序，列出最致命的 3 个风险)
-【进度偏差详情】(哪些任务滞后，预计延期多久)
-【行动建议】(针对现有问题，给出具体的破局方案，如：砍需求、加人力、调整优先级等)
-【提问环节】(为了更准确分析，你还需要我补充哪些维度的信息？)
-
-以下是项目详细数据：`
+const DEFAULT_SYSTEM_PROMPT = `你是一位拥有 10 年以上经验的互联网资深项目经理，国内互联网大厂的项目总监。你擅长用中文进行犀利的项目诊断。你擅长从碎片化的任务信息中洞察潜在风险、评估进度健康度，并提供改进策略。 你的母语是**简体中文**。
+ 指令： 
+ 我将为你提供一个或多个项目的详细介绍、任务排期、当前进度及已记录的风险点。请你基于这些数据进行深度审计，并输出一份《项目健康度分析报告》。 
+ 
+ 进度偏离度评估：根据当前日期和排期，分析哪些任务存在延期风险，计算整体进度是否符合预期。 
+ 关键路径识别：识别出影响项目上线的核心链路 
+ 风险深度洞察：除了我提供的风险点，请结合互联网项目经验，挖掘隐藏的风险（如：任务依赖冲突、测试时间预留不足等，你不需要关注人力资源）。 
+ 
+ (请严格按此结构输出) **全中文输出：** 报告和思考过程必须使用**简体中文**。 
+ 🚫 禁令 (Must Follow)
+1. **禁止输出英文**：除 ID (如 task-1) 和专有名词 (如 API) 外，全篇必须使用**纯简体中文**。: 
+ 
+ 【核心风险预警】 
+ 【其他分析】给出你的综合意见和其他分析建议，指出我可能忽略的地方 
+ 【行动建议】(针对现有问题，给出具体的破局方案，如：调整优先级等) 
+ 【综合意见】
+ 
+ 以下是项目详细数据：`
 
 async function callAIAPI(userPrompt: string, systemPrompt: string): Promise<string> {
   try {
     // 使用 Gemini 模型的 generateContent 接口
+    const requestBody = {
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: `${systemPrompt}\n\n${userPrompt}`
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2000,
+        language: 'zh-CN'
+      }
+    }
+
+    console.log('AI API Request:', {
+      url: `${AI_API_BASE_URL}/v1beta/models/[福利]gemini-3-flash-preview-maxthinking:generateContent`,
+      body: requestBody
+    })
+
     const response = await fetch(`${AI_API_BASE_URL}/v1beta/models/[福利]gemini-3-flash-preview-maxthinking:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${AI_API_KEY}`
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: `${systemPrompt}\n\n${userPrompt}`
-              }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2000
-        }
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {
@@ -69,9 +76,202 @@ async function callAIAPI(userPrompt: string, systemPrompt: string): Promise<stri
       throw new Error(`API request failed: ${response.status} - ${errorText}`)
     }
 
-    const data = await response.json()
-    // 解析 Gemini 响应格式
-    return data.candidates[0].content.parts[0].text
+    // 检查是否为流式响应
+    const contentType = response.headers.get('content-type') || ''
+    console.log('Response Content-Type:', contentType)
+    
+    // 更准确的流式响应检测
+    const isStreaming = contentType.includes('stream') || 
+                       contentType.includes('event-stream') ||
+                       contentType.includes('text/event-stream')
+    
+    let data: any
+    
+    if (isStreaming) {
+      console.log('Detected streaming response')
+      
+      // 处理流式响应
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error('Failed to get reader from response body')
+      }
+      
+      const decoder = new TextDecoder()
+      let chunks = ''
+      let completeData: any = null
+      let chunkCount = 0
+      
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          chunks += decoder.decode(value, { stream: true })
+          console.log(`Received data chunk, total length: ${chunks.length}`)
+          
+          // 处理所有完整的JSON对象（可能是多个chunk）
+          while (true) {
+            // 查找完整的JSON对象
+            const openBraceIndex = chunks.indexOf('{')
+            const closeBraceIndex = chunks.lastIndexOf('}')
+            
+            if (openBraceIndex === -1 || closeBraceIndex === -1 || openBraceIndex > closeBraceIndex) {
+              break // 没有完整的JSON对象
+            }
+            
+            // 提取完整的JSON对象
+            const jsonStr = chunks.substring(openBraceIndex, closeBraceIndex + 1)
+            chunks = chunks.substring(closeBraceIndex + 1)
+            
+            try {
+              const chunkData = JSON.parse(jsonStr)
+              chunkCount++
+              console.log(`Processing chunk ${chunkCount}:`, JSON.stringify(chunkData).substring(0, 100) + '...')
+              
+              // 构建完整响应（正确合并delta内容）
+              if (!completeData) {
+                // 初始化completeData
+                completeData = {
+                  choices: [{
+                    index: 0,
+                    delta: {
+                      content: '',
+                      reasoning_content: ''
+                    },
+                    message: {
+                      content: '',
+                      reasoning_content: ''
+                    },
+                    finish_reason: null
+                  }]
+                }
+              }
+              
+              // 合并chunk数据到completeData
+              if (chunkData.choices && chunkData.choices[0]) {
+                const chunkChoice = chunkData.choices[0]
+                
+                // 合并delta内容到completeData的第一个choice
+                const completeChoice = completeData.choices[0]
+                
+                // 合并content（主要回复内容）
+                if (chunkChoice.delta?.content) {
+                  completeChoice.delta.content += chunkChoice.delta.content
+                  completeChoice.message.content += chunkChoice.delta.content
+                  console.log(`Added content chunk (${chunkChoice.delta.content.length} chars):`, chunkChoice.delta.content.substring(0, 50) + '...')
+                }
+                
+                // 合并reasoning_content（思考过程）
+                if (chunkChoice.delta?.reasoning_content) {
+                  completeChoice.delta.reasoning_content += chunkChoice.delta.reasoning_content
+                  completeChoice.message.reasoning_content += chunkChoice.delta.reasoning_content
+                  console.log(`Added reasoning chunk (${chunkChoice.delta.reasoning_content.length} chars):`, chunkChoice.delta.reasoning_content.substring(0, 50) + '...')
+                }
+                
+                // 合并finish_reason
+                if (chunkChoice.finish_reason) {
+                  completeChoice.finish_reason = chunkChoice.finish_reason
+                  console.log(`Stream finished with reason: ${chunkChoice.finish_reason}`)
+                }
+              }
+              
+            } catch (parseError) {
+              console.error('Failed to parse chunk data:', parseError)
+              // 继续处理下一个chunk
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock()
+      }
+      
+      console.log(`Total chunks processed: ${chunkCount}`)
+      console.log('Final complete data:', JSON.stringify(completeData).substring(0, 300) + '...')
+      
+      // 检查响应完整性
+      if (!completeData) {
+        throw new Error('No valid data received from streaming response')
+      }
+      
+      // 检查是否有内容
+      const hasContent = completeData.choices[0].message.content || 
+                         completeData.choices[0].message.reasoning_content
+      
+      if (!hasContent) {
+        console.error('No content in response:', JSON.stringify(completeData))
+        throw new Error('Empty response received')
+      }
+      
+      // 检查流式响应是否完成
+      if (completeData.choices[0].finish_reason) {
+        console.log('Stream completed successfully:', completeData.choices[0].finish_reason)
+      } else {
+        console.warn('Stream may not have completed properly')
+      }
+      
+      data = completeData
+    } else {
+      // 处理非流式响应
+      console.log('Handling non-streaming response...')
+      data = await response.json()
+      console.log('AI API Raw Response:', data)
+    }
+
+    let resultText = ''
+    
+    // 1. 处理思考过程（reasoning_content）
+    if (data.choices) {
+      const choice = data.choices[0]
+      // 检查流式和非流式的思考过程
+      const reasoningContent = choice.delta?.reasoning_content || choice.message?.reasoning_content
+      
+      if (reasoningContent) {
+        console.log('Found reasoning content (first 100 chars):', reasoningContent.substring(0, 100) + '...')
+        // 直接使用API返回的思考内容，不进行翻译
+        resultText += reasoningContent + '\n\n'
+      }
+    }
+    
+    // 2. 处理主要内容
+    let mainContent = ''
+    
+    // 兼容不同API响应格式
+    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+      // Gemini 格式
+      mainContent = data.candidates[0].content.parts[0].text
+      console.log('Using Gemini response format')
+    } else if (data.choices && data.choices[0]?.message?.content) {
+      // OpenAI 非流式格式（优先使用message.content，包含完整内容）
+      mainContent = data.choices[0].message.content
+      console.log('Using OpenAI non-streaming response format')
+    } else if (data.choices && data.choices[0]?.delta?.content) {
+      // OpenAI 流式格式（delta.content只包含增量内容，应该使用message.content）
+      // 如果message.content为空，才使用delta.content
+      if (!data.choices[0].message?.content) {
+        mainContent = data.choices[0].delta.content
+        console.log('Using OpenAI streaming delta content (message.content is empty)')
+      } else {
+        console.log('Skipping delta content, using message.content instead')
+      }
+    } else {
+      // 检查是否只有思考过程
+      if (resultText) {
+        console.log('Only reasoning content found, using it as result')
+      } else {
+        console.error('Unknown API response format:', JSON.stringify(data))
+        throw new Error('Unknown API response format')
+      }
+    }
+    
+    // 3. 直接使用主要内容，不进行翻译
+    if (mainContent) {
+      console.log('Found main content (first 100 chars):', mainContent.substring(0, 100) + '...')
+      // 直接使用API返回的主要内容，不进行翻译
+      resultText += mainContent
+    }
+
+    console.log('Final AI Response Text:', resultText.substring(0, 100) + '...')
+    return resultText
   } catch (error) {
     console.error('AI API Error:', error)
     throw error
