@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Card, Tabs } from 'antd'
-import { ImportOutlined, FileTextOutlined } from '@ant-design/icons'
+import { ImportOutlined, FileTextOutlined, HistoryOutlined } from '@ant-design/icons'
 import SmartParser from '../../components/SmartParser'
 import ImportExport from '../../components/ImportExport'
+import HistoryLog from '../../components/HistoryLog'
 import './index.css'
 
 function DataManagement() {
@@ -26,6 +27,15 @@ function DataManagement() {
         </span>
       ),
       children: <ImportExport />,
+    },
+    {
+      key: 'history',
+      label: (
+        <span>
+          <HistoryOutlined /> 历史记录
+        </span>
+      ),
+      children: <HistoryLog />,
     },
   ]
 

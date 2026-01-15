@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import useStore from '../../store/useStore'
 import MasterGantt from '../../components/MasterGantt'
+import AIAnalysisModal from '../../components/AIAnalysisModal'
 import './index.css'
 
 function Dashboard() {
@@ -127,6 +128,18 @@ function Dashboard() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            
+          </motion.div>
+        </Col>
+      </Row>
+
       <motion.div
         variants={container}
         initial="hidden"
@@ -206,6 +219,8 @@ function Dashboard() {
           </AnimatePresence>
         </Col>
       </Row>
+
+      <AIAnalysisModal />
     </motion.div>
   )
 }

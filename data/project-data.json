@@ -54,53 +54,10 @@
       "contacts": []
     },
     {
-      "id": "3",
-      "name": "用户中心升级",
-      "status": "risk",
-      "progress": 60,
-      "startDate": "2024-01-05",
-      "endDate": "2024-02-10",
-      "partners": [
-        "内部系统"
-      ],
-      "developers": [
-        "陈七",
-        "周八"
-      ],
-      "testers": [
-        "吴九",
-        "郑十"
-      ],
-      "owner": "1221",
-      "productManager": "产品经理C",
-      "pmo": "PMO-C",
-      "remark": "依赖外部接口，存在风险"
-    },
-    {
-      "id": "4",
-      "name": "数据报表系统",
-      "status": "normal",
-      "progress": 30,
-      "startDate": "2024-01-20",
-      "endDate": "2024-03-15",
-      "partners": [
-        "BI部门"
-      ],
-      "developers": [
-        "孙十一"
-      ],
-      "testers": [
-        "钱十二"
-      ],
-      "owner": "项目经理D",
-      "productManager": "产品经理D",
-      "pmo": "PMO-D"
-    },
-    {
       "id": "5",
       "name": "营销活动平台",
       "status": "pending",
-      "progress": 0,
+      "progress": 20,
       "startDate": "2026-01-15",
       "endDate": "2026-03-11",
       "partners": [
@@ -113,11 +70,45 @@
         "王十四"
       ],
       "owner": "项目经理E",
-      "productManager": "产品经理E",
-      "pmo": "PMO-E",
+      "productManager": "pm-1768381922481",
+      "pmo": "pmo-1768381913272",
       "remark": "121212121212122112211212",
       "chatGroupLinks": [],
       "contacts": []
+    },
+    {
+      "id": "project-1768299507620",
+      "name": "23",
+      "status": "normal",
+      "progress": 0,
+      "startDate": "2026-01-13",
+      "endDate": "2026-02-13",
+      "owner": "",
+      "pmo": "",
+      "productManager": "",
+      "partners": [],
+      "developers": [],
+      "testers": [],
+      "chatGroupLinks": [],
+      "contacts": [],
+      "remark": ""
+    },
+    {
+      "id": "project-1768369556299",
+      "name": "111",
+      "status": "normal",
+      "progress": 0,
+      "startDate": "2026-01-14",
+      "endDate": "2026-02-14",
+      "owner": "",
+      "pmo": "",
+      "productManager": "",
+      "partners": [],
+      "developers": [],
+      "testers": [],
+      "chatGroupLinks": [],
+      "contacts": [],
+      "remark": ""
     }
   ],
   "tasks": [
@@ -306,6 +297,101 @@
       "assignees": [],
       "dailyProgress": "",
       "remark": ""
+    },
+    {
+      "id": "task-1768369556300-0",
+      "projectId": "project-1768369556299",
+      "name": "开发排期任务",
+      "type": {
+        "id": "1",
+        "name": "开发排期",
+        "color": "#1890ff",
+        "enabled": true
+      },
+      "status": "normal",
+      "progress": 0,
+      "startDate": "2025-12-18",
+      "endDate": "2027-01-14",
+      "assignees": [],
+      "dailyProgress": "",
+      "remark": ""
+    },
+    {
+      "id": "task-1768369556300-1",
+      "projectId": "project-1768369556299",
+      "name": "开发联调任务",
+      "type": {
+        "id": "2",
+        "name": "开发联调",
+        "color": "#52c41a",
+        "enabled": true
+      },
+      "status": "normal",
+      "progress": 0,
+      "startDate": "2026-01-19",
+      "endDate": "2026-01-21",
+      "assignees": [
+        "王靖博",
+        "邓晓旭"
+      ],
+      "dailyProgress": "",
+      "remark": "常用"
+    },
+    {
+      "id": "task-1768369556300-2",
+      "projectId": "project-1768369556299",
+      "name": "测试排期任务",
+      "type": {
+        "id": "3",
+        "name": "测试排期",
+        "color": "#faad14",
+        "enabled": true
+      },
+      "status": "normal",
+      "progress": 0,
+      "startDate": "2026-01-12",
+      "endDate": "2026-01-23",
+      "assignees": [],
+      "dailyProgress": "",
+      "remark": ""
+    },
+    {
+      "id": "task-1768369556300-3",
+      "projectId": "project-1768369556299",
+      "name": "测试联调任务",
+      "type": {
+        "id": "4",
+        "name": "测试联调",
+        "color": "#f5222d",
+        "enabled": true
+      },
+      "status": "normal",
+      "progress": 0,
+      "startDate": "2026-01-26",
+      "endDate": "2026-01-30",
+      "assignees": [
+        "史宁博"
+      ],
+      "dailyProgress": "",
+      "remark": "期望与合作方"
+    },
+    {
+      "id": "task-1768369556300-4",
+      "projectId": "project-1768369556299",
+      "name": "产品UAT任务",
+      "type": {
+        "id": "5",
+        "name": "产品UAT",
+        "color": "#722ed1",
+        "enabled": true
+      },
+      "status": "normal",
+      "progress": 0,
+      "startDate": "2026-01-29",
+      "endDate": "2026-01-30",
+      "assignees": [],
+      "dailyProgress": "",
+      "remark": ""
     }
   ],
   "taskTypes": [
@@ -344,6 +430,168 @@
       "name": "上线",
       "color": "#13c2c2",
       "enabled": true
+    }
+  ],
+  "pmos": [
+    {
+      "id": "pmo-1768381913272",
+      "name": "旭阳",
+      "enabled": true
+    }
+  ],
+  "productManagers": [
+    {
+      "id": "pm-1768381922481",
+      "name": "登科",
+      "enabled": true
+    }
+  ],
+  "historyRecords": [
+    {
+      "id": "history-1768276135071",
+      "entityType": "project",
+      "entityId": "5",
+      "entityName": "营销活动平台",
+      "operation": "update",
+      "operator": "admin",
+      "operatedAt": "2026-01-13T03:48:55.071Z",
+      "changes": {
+        "progress": {
+          "from": 0,
+          "to": 20
+        },
+        "partners": {
+          "from": [
+            "市场部"
+          ],
+          "to": [
+            "市场部"
+          ]
+        },
+        "developers": {
+          "from": [
+            "李十三"
+          ],
+          "to": [
+            "李十三"
+          ]
+        },
+        "testers": {
+          "from": [
+            "王十四"
+          ],
+          "to": [
+            "王十四"
+          ]
+        },
+        "chatGroupLinks": {
+          "from": [],
+          "to": []
+        },
+        "contacts": {
+          "from": [],
+          "to": []
+        }
+      },
+      "projectId": "5"
+    },
+    {
+      "id": "history-1768276135071",
+      "entityType": "project",
+      "entityId": "5",
+      "entityName": "营销活动平台",
+      "operation": "update",
+      "operator": "admin",
+      "operatedAt": "2026-01-13T03:48:55.071Z",
+      "changes": {
+        "progress": {
+          "from": 0,
+          "to": 20
+        },
+        "partners": {
+          "from": [
+            "市场部"
+          ],
+          "to": [
+            "市场部"
+          ]
+        },
+        "developers": {
+          "from": [
+            "李十三"
+          ],
+          "to": [
+            "李十三"
+          ]
+        },
+        "testers": {
+          "from": [
+            "王十四"
+          ],
+          "to": [
+            "王十四"
+          ]
+        },
+        "chatGroupLinks": {
+          "from": [],
+          "to": []
+        },
+        "contacts": {
+          "from": [],
+          "to": []
+        }
+      },
+      "projectId": "5"
+    },
+    {
+      "id": "history-1768369556300",
+      "entityType": "project",
+      "entityId": "project-1768369556299",
+      "entityName": "111",
+      "operation": "create",
+      "operator": "admin",
+      "operatedAt": "2026-01-14T05:45:56.300Z",
+      "projectId": "project-1768369556299"
+    },
+    {
+      "id": "history-1768369556300",
+      "entityType": "task",
+      "entityId": "task-1768369556300-0",
+      "entityName": "���发排期任务",
+      "operation": "create",
+      "operator": "admin",
+      "operatedAt": "2026-01-14T05:45:56.300Z",
+      "projectId": "project-1768369556299"
+    },
+    {
+      "id": "history-1768369556301",
+      "entityType": "task",
+      "entityId": "task-1768369556300-1",
+      "entityName": "开发联调任务",
+      "operation": "create",
+      "operator": "admin",
+      "operatedAt": "2026-01-14T05:45:56.301Z",
+      "projectId": "project-1768369556299"
+    },
+    {
+      "id": "history-1768369556302",
+      "entityType": "task",
+      "entityId": "task-1768369556300-2",
+      "entityName": "测试排期任务",
+      "operation": "create",
+      "operator": "admin",
+      "operatedAt": "2026-01-14T05:45:56.302Z",
+      "projectId": "project-1768369556299"
+    },
+    {
+      "id": "history-1768369556302",
+      "entityType": "task",
+      "entityId": "task-1768369556300-3",
+      "entityName": "测试联调任务",
+      "operation": "create",
+      "operator": "admin",
+      "operatedAt": "2026-01-14T05:45:56.302Z",
+      "projectId": "project-1768369556299"
     }
   ]
 }

@@ -151,12 +151,11 @@ function MasterGantt({ projects }: MasterGanttProps) {
   }
 
   // 获取项目的最新风险状态
-  const getProjectRiskStatus = (project: Project, projectTasks: Task[] = []): Project['status'] => {
-    // 优先使用项目自身状态
+  const getProjectRiskStatus = (project: Project): Project['status'] => {
     return project.status
   }
 
-  const getProjectBarPosition = (project: Project, projectTasks: Task[]) => {
+  const getProjectBarPosition = (project: Project) => {
     const projectStartDate = dayjs(project.startDate)
     const projectEndDate = dayjs(project.endDate)
     
@@ -170,7 +169,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
     return {
       left: projectBarLeft,
       width: projectBarWidth,
-      status: getProjectRiskStatus(project, projectTasks)
+      status: getProjectRiskStatus(project)
     }
   }
 
@@ -636,7 +635,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
               const riskDates = Object.keys(projectRiskRecords).sort()
               
               // 使用缓存的项目进度条计算
-              const projectBarPosition = getProjectBarPosition(project, projectTasks)
+              const projectBarPosition = getProjectBarPosition(project)
 
               return (
                 <div key={project.id} className="project-timeline-section">
@@ -845,6 +844,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
         onSave={handleProjectSave}
         onAdd={() => {}}
         onCancel={handleProjectCancel}
+        onProjectCreated={() => {}}
       />
 
       <TaskEditModal

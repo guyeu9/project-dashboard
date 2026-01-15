@@ -14,7 +14,6 @@ import { Project } from '../../types'
 import './index.css'
 
 const { Option } = Select
-
 const { TextArea } = Input
 
 interface ProjectHeaderProps {
@@ -29,7 +28,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
   const [editingName, setEditingName] = useState(false)
   const [projectName, setProjectName] = useState(project.name)
   const [editingField, setEditingField] = useState<string | null>(null)
-  const [editValue, setEditValue] = useState('')
+  const [editValue, setEditValue] = useState<string | Date>('')
   const [remarkModalVisible, setRemarkModalVisible] = useState(false)
   const [remark, setRemark] = useState(project.remark || '')
 
@@ -86,7 +85,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
     } 
     // 处理数组类型的字段
     else if (editingField === 'partners' || editingField === 'developers' || editingField === 'testers') {
-      value = editValue.split(',').map((item: string) => item.trim()).filter((item: string) => item)
+      value = (editValue as string).split(',').map((item: string) => item.trim()).filter((item: string) => item)
     }
     
     onProjectUpdate(editingField!, value)
@@ -164,7 +163,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               {editingField === 'partners' ? (
                 <Space>
                   <Input
-                    value={editValue}
+                    value={editValue as string}
                     onChange={(e) => setEditValue(e.target.value)}
                     placeholder="请输入合作方，用逗号分隔"
                     style={{ width: '100%' }}
@@ -206,7 +205,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               {editingField === 'productManager' ? (
                 <Space>
                   <Input
-                    value={editValue}
+                    value={editValue as string}
                     onChange={(e) => setEditValue(e.target.value)}
                     placeholder="请输入产品经理"
                     style={{ width: '100%' }}
@@ -244,7 +243,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               {editingField === 'pmo' ? (
                 <Space>
                   <Input
-                    value={editValue}
+                    value={editValue as string}
                     onChange={(e) => setEditValue(e.target.value)}
                     placeholder="请输入 PMO"
                     style={{ width: '100%' }}
@@ -282,7 +281,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               {editingField === 'developers' ? (
                 <Space>
                   <Input
-                    value={editValue}
+                    value={editValue as string}
                     onChange={(e) => setEditValue(e.target.value)}
                     placeholder="请输入开发人员，用逗号分隔"
                     style={{ width: '100%' }}
@@ -324,7 +323,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               {editingField === 'testers' ? (
                 <Space>
                   <Input
-                    value={editValue}
+                    value={editValue as string}
                     onChange={(e) => setEditValue(e.target.value)}
                     placeholder="请输入测试人员，用逗号分隔"
                     style={{ width: '100%' }}
@@ -366,7 +365,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               {editingField === 'owner' ? (
                 <Space>
                   <Input
-                    value={editValue}
+                    value={editValue as string}
                     onChange={(e) => setEditValue(e.target.value)}
                     placeholder="请输入负责人"
                     style={{ width: '100%' }}
@@ -558,7 +557,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               {editingField === 'remark' ? (
                 <Space direction="vertical" style={{ width: '100%' }}>
                   <TextArea
-                    value={editValue}
+                    value={editValue as string}
                     onChange={(e) => setEditValue(e.target.value)}
                     placeholder="请输入项目备注信息"
                     autoSize={{ minRows: 2, maxRows: 8 }}

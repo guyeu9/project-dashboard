@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Card, Table, Button, Tag, Modal, Form, DatePicker, Input, Select, Space, InputNumber, App as AntApp } from 'antd'
+import { Card, Table, Button, Tag, Modal, Form, DatePicker, Input, InputNumber, Select, Space, App as AntApp } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
-import dayjs from 'dayjs'
 import { Task, DailyTaskRecord } from '../../types'
+import dayjs from 'dayjs'
+import './index.css'
 
-const { TextArea } = Input
 const { Option } = Select
+const { TextArea } = Input
 
 interface DailyProgressManagerProps {
   task: Task

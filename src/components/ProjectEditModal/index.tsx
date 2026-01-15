@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Modal, Form, Input, Select, InputNumber, DatePicker } from 'antd'
 import { Project } from '../../types'
+import useStore from '../../store/useStore'
 import dayjs from 'dayjs'
 
 const { TextArea } = Input
@@ -12,11 +13,13 @@ interface ProjectEditModalProps {
   onSave: (projectId: string, updates: Partial<Project>) => void
   onAdd: (project: Project) => void
   onCancel: () => void
+  onProjectCreated?: (project: Project) => boolean | void
 }
 
-function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: ProjectEditModalProps) {
+function ProjectEditModal({ visible, project, onSave, onAdd, onCancel, onProjectCreated }: ProjectEditModalProps) {
   const [form] = Form.useForm()
   const [isEditMode, setIsEditMode] = useState(false)
+  const { pmos, productManagers } = useStore()
 
   useEffect(() => {
     setIsEditMode(!!project)
@@ -93,7 +96,14 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
           id: `project-${Date.now()}`,
           ...updates,
         }
-        onAdd(newProject)
+        
+        const handled = onProjectCreated?.(newProject)
+        
+        if (handled !== false) {
+          onAdd(newProject)
+        } else {
+          return
+        }
       }
       form.resetFields()
     })
@@ -175,7 +185,15 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
             name="productManager"
             style={{ gridColumn: 'span 1' }}
           >
-            <Input placeholder="请输入产品经理" />
+            <Select
+              placeholder="请选择产品经理"
+              allowClear
+              showSearch
+            >
+              {productManagers.filter(p => p.enabled).map(p => (
+                <Option key={p.id} value={p.id}>{p.name}</Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -183,7 +201,15 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel }: Project
             name="pmo"
             style={{ gridColumn: 'span 1' }}
           >
-            <Input placeholder="请输入PMO负责人" />
+            <Select
+              placeholder="请选择PMO"
+              allowClear
+              showSearch
+            >
+              {pmos.filter(p => p.enabled).map(p => (
+                <Option key={p.id} value={p.id}>{p.name}</Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item

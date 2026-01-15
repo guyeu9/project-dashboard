@@ -1,11 +1,26 @@
-import { Project } from '../types'
+import { Project, PMO, ProductManager } from '../types'
+
+export const mockPMOs: PMO[] = [
+  { id: 'pmo-1', name: 'PMO-A', enabled: true },
+  { id: 'pmo-2', name: 'PMO-B', enabled: true },
+  { id: 'pmo-3', name: 'PMO-C', enabled: true },
+  { id: 'pmo-4', name: 'PMO-D', enabled: true },
+  { id: 'pmo-5', name: 'PMO-E', enabled: true },
+]
+
+export const mockProductManagers: ProductManager[] = [
+  { id: 'pm-1', name: '产品经理A', enabled: true },
+  { id: 'pm-2', name: '产品经理B', enabled: true },
+  { id: 'pm-3', name: '产品经理C', enabled: true },
+  { id: 'pm-4', name: '产品经理D', enabled: true },
+  { id: 'pm-5', name: '产品经理E', enabled: true },
+]
 
 export const mockProjects: Project[] = [
   {
     id: '1',
     name: '短剧小程序',
     status: 'normal',
-    riskLevel: 1,
     progress: 75,
     startDate: '2026-01-01',
     endDate: '2026-02-15',
@@ -21,7 +36,6 @@ export const mockProjects: Project[] = [
     id: '2',
     name: '支付中台改造',
     status: 'delayed',
-    riskLevel: 5,
     progress: 45,
     startDate: '2025-12-15',
     endDate: '2026-01-20',
@@ -37,7 +51,6 @@ export const mockProjects: Project[] = [
     id: '3',
     name: '用户中心升级',
     status: 'risk',
-    riskLevel: 4,
     progress: 60,
     startDate: '2026-01-05',
     endDate: '2026-02-10',
@@ -53,7 +66,6 @@ export const mockProjects: Project[] = [
     id: '4',
     name: '数据报表系统',
     status: 'normal',
-    riskLevel: 2,
     progress: 30,
     startDate: '2026-01-20',
     endDate: '2026-03-15',
@@ -68,7 +80,6 @@ export const mockProjects: Project[] = [
     id: '5',
     name: '营销活动平台',
     status: 'pending',
-    riskLevel: 1,
     progress: 0,
     startDate: '2026-02-01',
     endDate: '2026-03-30',

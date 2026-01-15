@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import { Project, Task, TaskType } from '../types'
-import { mockProjects } from './mockData'
+import { Project, Task, TaskType, HistoryRecord, PMO, ProductManager } from '../types'
+import { mockProjects, mockPMOs, mockProductManagers } from './mockData'
+import useAIAnalysisStore from './aiStore'
 
 const mockTasks: Task[] = [
   {
@@ -11,18 +12,18 @@ const mockTasks: Task[] = [
     status: 'normal',
     progress: 80,
     startDate: '2026-01-01',
-    endDate: '2026-01-10',
-    assignees: ['张三', '李四'],
+    endDate: '2026-01-13',
+    assignees: ['张三'],
     dailyRecords: [
       {
-        date: '2026-01-01',
+        date: '2026-01-06',
         progress: 10,
-        status: 'normal',
+        status: 'risk',
         content: '项目启动，环境搭建完成',
         assignees: ['张三', '李四']
       },
       {
-        date: '2026-01-02',
+        date: '2026-01-15',
         progress: 25,
         status: 'risk',
         content: '遇到技术难点，需要协调资源',
@@ -42,7 +43,8 @@ const mockTasks: Task[] = [
         content: '联调接口延后，整体进度有延期风险',
         assignees: ['张三', '李四']
       }
-    ]
+    ],
+    remark: ''
   },
   {
     id: 'task-2',
@@ -62,7 +64,8 @@ const mockTasks: Task[] = [
         content: '开始联调测试',
         assignees: ['张三', '李四']
       }
-    ]
+    ],
+    remark: ''
   },
   {
     id: 'task-3',
@@ -73,7 +76,7 @@ const mockTasks: Task[] = [
     progress: 40,
     startDate: '2026-01-16',
     endDate: '2026-01-25',
-    assignees: ['王五', '赵六'],
+    assignees: ['王五'],
     dailyRecords: []
   }
 ]
@@ -82,12 +85,17 @@ interface AppState {
   projects: Project[]
   tasks: Task[]
   taskTypes: TaskType[]
+  pmos: PMO[]
+  productManagers: ProductManager[]
+  historyRecords: HistoryRecord[]
   selectedProjectId: string | null
   selectedStatus: string[]
   
   setProjects: (projects: Project[]) => void
   setTasks: (tasks: Task[]) => void
   setTaskTypes: (taskTypes: TaskType[]) => void
+  setPMOs: (pmos: PMO[]) => void
+  setProductManagers: (productManagers: ProductManager[]) => void
   setSelectedProjectId: (projectId: string | null) => void
   setSelectedStatus: (status: string[]) => void
   addProject: (project: Project) => void
@@ -97,6 +105,14 @@ interface AppState {
   deleteTask: (taskId: string) => void
   deleteProject: (projectId: string) => void
   initializeData: () => void
+  addHistoryRecord: (record: HistoryRecord) => void
+  clearHistoryRecords: () => void
+  clearAllData: () => void
+  getHistoryRecords: (filters?: { projectId?: string; startDate?: string; endDate?: string }) => HistoryRecord[]
+  startSyncInterval: () => void
+  stopSyncInterval: () => void
+  manualSync: () => Promise<void>
+  analyzeProjects: (projects: Project[], tasks: Task[], context: any) => Promise<void>
 }
 
 const API_BASE_URL =
@@ -106,7 +122,7 @@ const API_BASE_URL =
 
 const API_URL = `${API_BASE_URL}/api/data`
 
-const defaultData: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[] } = {
+const defaultData: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[]; pmos: PMO[]; productManagers: ProductManager[]; historyRecords: HistoryRecord[] } = {
   projects: mockProjects,
   tasks: mockTasks,
   taskTypes: [
@@ -116,23 +132,31 @@ const defaultData: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[] }
     { id: '4', name: '测试联调', color: '#f5222d', enabled: true },
     { id: '5', name: '产品UAT', color: '#722ed1', enabled: true },
     { id: '6', name: '上线', color: '#13c2c2', enabled: true },
-  ]
+  ],
+  pmos: mockPMOs,
+  productManagers: mockProductManagers,
+  historyRecords: []
 }
 
-const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[]; taskTypes: TaskType[] } | null> => {
+const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[]; taskTypes: TaskType[]; pmos: PMO[]; productManagers: ProductManager[]; historyRecords: HistoryRecord[] } | null> => {
   try {
     const res = await fetch(API_URL, { method: 'GET' })
     if (!res.ok) {
+      console.error('从服务端加载数据失败:', res.status)
       return null
     }
     const data = await res.json()
     if (!data.projects || !data.tasks) {
+      console.error('服务端数据格式错误')
       return null
     }
     return {
       projects: data.projects as Project[],
       tasks: data.tasks as Task[],
       taskTypes: (data.taskTypes || defaultData.taskTypes) as TaskType[],
+      pmos: (data.pmos || defaultData.pmos) as PMO[],
+      productManagers: (data.productManagers || defaultData.productManagers) as ProductManager[],
+      historyRecords: (data.historyRecords || []) as HistoryRecord[],
     }
   } catch (error) {
     console.error('从服务端加载数据失败:', error)
@@ -140,7 +164,7 @@ const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[]; t
   }
 }
 
-const saveToServer = async (data: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[] }) => {
+const saveToServer = async (data: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[]; pmos: PMO[]; productManagers: ProductManager[]; historyRecords: HistoryRecord[] }) => {
   try {
     await fetch(API_URL, {
       method: 'POST',
@@ -155,9 +179,54 @@ const saveToServer = async (data: { projects: Project[]; tasks: Task[]; taskType
 }
 
 const useStore = create<AppState>((set, get) => {
-  const applyAndPersist = (data: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[] }) => {
-    set({ projects: data.projects, tasks: data.tasks, taskTypes: data.taskTypes })
+  let syncInterval: number | null = null
+  
+  const applyAndPersist = (data: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[]; pmos: PMO[]; productManagers: ProductManager[]; historyRecords: HistoryRecord[] }) => {
+    set({ 
+      projects: data.projects, 
+      tasks: data.tasks, 
+      taskTypes: data.taskTypes, 
+      pmos: data.pmos, 
+      productManagers: data.productManagers, 
+      historyRecords: data.historyRecords 
+    })
     saveToServer(data)
+  }
+
+  const startSyncInterval = () => {
+    if (syncInterval) {
+      clearInterval(syncInterval)
+    }
+    syncInterval = setInterval(async () => {
+      const serverData = await syncFromServer()
+      if (serverData) {
+        set({
+          projects: serverData.projects,
+          tasks: serverData.tasks,
+          taskTypes: serverData.taskTypes,
+          historyRecords: serverData.historyRecords
+        })
+      }
+    }, 30000)
+  }
+
+  const stopSyncInterval = () => {
+    if (syncInterval) {
+      clearInterval(syncInterval)
+      syncInterval = null
+    }
+  }
+
+  const manualSync = async () => {
+    const serverData = await syncFromServer()
+    if (serverData) {
+      set({
+        projects: serverData.projects,
+        tasks: serverData.tasks,
+        taskTypes: serverData.taskTypes,
+        historyRecords: serverData.historyRecords
+      })
+    }
   }
 
   syncFromServer().then((serverData) => {
@@ -166,69 +235,256 @@ const useStore = create<AppState>((set, get) => {
     } else {
       saveToServer(defaultData)
     }
+    startSyncInterval()
   })
 
   return {
     projects: defaultData.projects,
     tasks: defaultData.tasks,
-    taskTypes: [
-      { id: '1', name: '开发排期', color: '#1890ff', enabled: true },
-      { id: '2', name: '开发联调', color: '#52c41a', enabled: true },
-      { id: '3', name: '测试排期', color: '#faad14', enabled: true },
-      { id: '4', name: '测试联调', color: '#f5222d', enabled: true },
-      { id: '5', name: '产品UAT', color: '#722ed1', enabled: true },
-      { id: '6', name: '上线', color: '#13c2c2', enabled: true },
-    ],
+    taskTypes: defaultData.taskTypes,
+    pmos: defaultData.pmos,
+    productManagers: defaultData.productManagers,
+    historyRecords: defaultData.historyRecords,
     selectedProjectId: null,
     selectedStatus: [],
     
     setProjects: (projects) => {
-      const data = { projects, tasks: get().tasks, taskTypes: get().taskTypes }
+      const data = { projects, tasks: get().tasks, taskTypes: get().taskTypes, pmos: get().pmos, productManagers: get().productManagers, historyRecords: get().historyRecords }
       applyAndPersist(data)
     },
     setTasks: (tasks) => {
-      const data = { projects: get().projects, tasks, taskTypes: get().taskTypes }
+      const data = { projects: get().projects, tasks, taskTypes: get().taskTypes, pmos: get().pmos, productManagers: get().productManagers, historyRecords: get().historyRecords }
       applyAndPersist(data)
     },
     setTaskTypes: (taskTypes) => {
-      const data = { projects: get().projects, tasks: get().tasks, taskTypes }
+      const data = { 
+        projects: get().projects, 
+        tasks: get().tasks, 
+        taskTypes, 
+        pmos: get().pmos, 
+        productManagers: get().productManagers,
+        historyRecords: get().historyRecords 
+      }
       applyAndPersist(data)
+      get().addHistoryRecord({
+        id: `history-${Date.now()}`,
+        entityType: 'taskType',
+        entityId: 'batch',
+        entityName: '任务类型',
+        operation: 'update',
+        operator: 'admin',
+        operatedAt: new Date().toISOString(),
+        changes: { taskTypes: { from: get().taskTypes, to: taskTypes } }
+      })
+    },
+    setPMOs: (pmos) => {
+      const data = { projects: get().projects, tasks: get().tasks, taskTypes: get().taskTypes, pmos, productManagers: get().productManagers, historyRecords: get().historyRecords }
+      applyAndPersist(data)
+      get().addHistoryRecord({
+        id: `history-${Date.now()}`,
+        entityType: 'pmo',
+        entityId: 'batch',
+        entityName: 'PMO',
+        operation: 'update',
+        operator: 'admin',
+        operatedAt: new Date().toISOString(),
+        changes: { pmos: { from: get().pmos, to: pmos } }
+      })
+    },
+    setProductManagers: (productManagers) => {
+      const data = { projects: get().projects, tasks: get().tasks, taskTypes: get().taskTypes, pmos: get().pmos, productManagers, historyRecords: get().historyRecords }
+      applyAndPersist(data)
+      get().addHistoryRecord({
+        id: `history-${Date.now()}`,
+        entityType: 'productManager',
+        entityId: 'batch',
+        entityName: '产品经理',
+        operation: 'update',
+        operator: 'admin',
+        operatedAt: new Date().toISOString(),
+        changes: { productManagers: { from: get().productManagers, to: productManagers } }
+      })
     },
     setSelectedProjectId: (projectId) => set({ selectedProjectId: projectId }),
     setSelectedStatus: (status) => set({ selectedStatus: status }),
     
     addProject: (project) => {
       const newProjects = [...get().projects, project]
-      const data = { projects: newProjects, tasks: get().tasks, taskTypes: get().taskTypes }
+      const data = { 
+        projects: newProjects, 
+        tasks: get().tasks, 
+        taskTypes: get().taskTypes, 
+        pmos: get().pmos, 
+        productManagers: get().productManagers,
+        historyRecords: get().historyRecords 
+      }
       applyAndPersist(data)
+      get().addHistoryRecord({
+        id: `history-${Date.now()}`,
+        entityType: 'project',
+        entityId: project.id,
+        entityName: project.name,
+        operation: 'create',
+        operator: 'admin',
+        operatedAt: new Date().toISOString(),
+        projectId: project.id
+      })
     },
     updateProject: (projectId, updates) => {
+      const project = get().projects.find(p => p.id === projectId)
+      if (!project) return
+      
       const newProjects = get().projects.map((p) => (p.id === projectId ? { ...p, ...updates } : p))
-      const data = { projects: newProjects, tasks: get().tasks, taskTypes: get().taskTypes }
+      const data = { 
+        projects: newProjects, 
+        tasks: get().tasks, 
+        taskTypes: get().taskTypes, 
+        pmos: get().pmos, 
+        productManagers: get().productManagers,
+        historyRecords: get().historyRecords 
+      }
       applyAndPersist(data)
+      
+      const changes: Record<string, { from: unknown; to: unknown }> = {}
+      Object.entries(updates).forEach(([key, value]) => {
+        if (project[key as keyof Project] !== value) {
+          changes[key] = { from: project[key as keyof Project], to: value }
+        }
+      })
+      
+      if (Object.keys(changes).length > 0) {
+        get().addHistoryRecord({
+          id: `history-${Date.now()}`,
+          entityType: 'project',
+          entityId: projectId,
+          entityName: project.name,
+          operation: 'update',
+          operator: 'admin',
+          operatedAt: new Date().toISOString(),
+          changes,
+          projectId: projectId
+        })
+      }
     },
     addTask: (task) => {
       const newTasks = [...get().tasks, task]
-      const data = { projects: get().projects, tasks: newTasks, taskTypes: get().taskTypes }
+      const data = { 
+        projects: get().projects, 
+        tasks: newTasks, 
+        taskTypes: get().taskTypes, 
+        pmos: get().pmos, 
+        productManagers: get().productManagers,
+        historyRecords: get().historyRecords 
+      }
       applyAndPersist(data)
+      get().addHistoryRecord({
+        id: `history-${Date.now()}`,
+        entityType: 'task',
+        entityId: task.id,
+        entityName: task.name,
+        operation: 'create',
+        operator: 'admin',
+        operatedAt: new Date().toISOString(),
+        projectId: task.projectId
+      })
     },
     updateTask: (taskId, updates) => {
+      const task = get().tasks.find(t => t.id === taskId)
+      if (!task) return
+      
       const newTasks = get().tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t))
-      const data = { projects: get().projects, tasks: newTasks, taskTypes: get().taskTypes }
+      const data = { 
+        projects: get().projects, 
+        tasks: newTasks, 
+        taskTypes: get().taskTypes, 
+        pmos: get().pmos, 
+        productManagers: get().productManagers,
+        historyRecords: get().historyRecords 
+      }
       applyAndPersist(data)
+      
+      // 需要排除的字段（不记录变更或不参与比较）
+      const excludedFields = ['dailyRecords']
+      
+      const changes: Record<string, { from: unknown; to: unknown }> = {}
+      Object.entries(updates).forEach(([key, value]) => {
+        // 跳过不需要比较的字段
+        if (excludedFields.includes(key)) return
+        
+        const oldValue = task[key as keyof Task]
+        // 使用 JSON.stringify 比较对象和数组，确保内容一致才认为无变化
+        const oldValueStr = typeof oldValue === 'object' ? JSON.stringify(oldValue) : oldValue
+        const newValueStr = typeof value === 'object' ? JSON.stringify(value) : value
+        
+        if (oldValueStr !== newValueStr) {
+          changes[key] = { from: oldValue, to: value }
+        }
+      })
+      
+      if (Object.keys(changes).length > 0) {
+        get().addHistoryRecord({
+          id: `history-${Date.now()}`,
+          entityType: 'task',
+          entityId: taskId,
+          entityName: task.name,
+          operation: 'update',
+          operator: 'admin',
+          operatedAt: new Date().toISOString(),
+          changes,
+          projectId: task.projectId
+        })
+      }
     },
     deleteTask: (taskId) => {
+      const task = get().tasks.find(t => t.id === taskId)
+      if (!task) return
+      
       const newTasks = get().tasks.filter((t) => t.id !== taskId)
-      const data = { projects: get().projects, tasks: newTasks, taskTypes: get().taskTypes }
+      const data = { 
+        projects: get().projects, 
+        tasks: newTasks, 
+        taskTypes: get().taskTypes, 
+        pmos: get().pmos, 
+        productManagers: get().productManagers,
+        historyRecords: get().historyRecords 
+      }
       applyAndPersist(data)
+      get().addHistoryRecord({
+        id: `history-${Date.now()}`,
+        entityType: 'task',
+        entityId: taskId,
+        entityName: task.name,
+        operation: 'delete',
+        operator: 'admin',
+        operatedAt: new Date().toISOString(),
+        projectId: task.projectId
+      })
     },
     deleteProject: (projectId) => {
-      // 删除项目
+      const project = get().projects.find(p => p.id === projectId)
+      if (!project) return
+      
       const newProjects = get().projects.filter(p => p.id !== projectId)
-      // 删除关联任务
       const newTasks = get().tasks.filter(t => t.projectId !== projectId)
-      const data = { projects: newProjects, tasks: newTasks, taskTypes: get().taskTypes }
+      const data = { 
+        projects: newProjects, 
+        tasks: newTasks, 
+        taskTypes: get().taskTypes, 
+        pmos: get().pmos, 
+        productManagers: get().productManagers,
+        historyRecords: get().historyRecords 
+      }
       applyAndPersist(data)
+      get().addHistoryRecord({
+        id: `history-${Date.now()}`,
+        entityType: 'project',
+        entityId: projectId,
+        entityName: project.name,
+        operation: 'delete',
+        operator: 'admin',
+        operatedAt: new Date().toISOString(),
+        projectId: projectId
+      })
     },
     initializeData: () => {
       syncFromServer().then((serverData) => {
@@ -239,6 +495,63 @@ const useStore = create<AppState>((set, get) => {
         }
       })
     },
+    addHistoryRecord: (record) => {
+      set(state => ({
+        historyRecords: [...state.historyRecords, record]
+      }))
+      // 注意：不在此处保存数据，避免重复保存
+      // 保存由调用方通过 applyAndPersist 统一处理
+    },
+    clearHistoryRecords: () => {
+      set({ historyRecords: [] })
+      const data = { 
+        projects: get().projects, 
+        tasks: get().tasks, 
+        taskTypes: get().taskTypes, 
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: [] 
+      }
+      saveToServer(data)
+    },
+    clearAllData: () => {
+      const emptyData = { 
+        projects: [], 
+        tasks: [], 
+        taskTypes: defaultData.taskTypes, // 保留默认任务类型
+        pmos: [],
+        productManagers: [],
+        historyRecords: [] 
+      }
+      set(emptyData)
+      saveToServer(emptyData)
+    },
+    getHistoryRecords: (filters) => {
+      let records = [...get().historyRecords]
+      
+      if (filters?.projectId) {
+        records = records.filter(record => record.projectId === filters.projectId)
+      }
+      
+      if (filters?.startDate) {
+        const startDate = new Date(filters.startDate)
+        records = records.filter(record => new Date(record.operatedAt) >= startDate)
+      }
+      
+      if (filters?.endDate) {
+        const endDate = new Date(filters.endDate)
+        records = records.filter(record => new Date(record.operatedAt) <= endDate)
+      }
+      
+      return records.sort((a, b) => new Date(b.operatedAt).getTime() - new Date(a.operatedAt).getTime())
+    },
+    startSyncInterval,
+    stopSyncInterval,
+    manualSync,
+    analyzeProjects: async (projects, tasks, context) => {
+      const aiStore = useAIAnalysisStore.getState()
+      await aiStore.analyzeProjects(projects, tasks, context)
+    }
   }
 })
 

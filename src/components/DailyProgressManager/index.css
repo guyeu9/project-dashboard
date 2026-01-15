@@ -1,0 +1,47 @@
+.daily-progress-manager {
+  padding: 16px;
+}
+
+.daily-progress-manager .compact-modal .ant-modal-body {
+  padding: 20px;
+}
+
+.daily-progress-manager .compact-form .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.daily-progress-manager .compact-form .ant-form-item:last-child {
+  margin-bottom: 0;
+}
+
+.daily-progress-manager .ant-table {
+  font-size: 13px;
+}
+
+.daily-progress-manager .ant-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.daily-progress-manager .ant-btn-link {
+  padding: 0 4px;
+  font-size: 12px;
+}
+
+.daily-progress-manager .ant-empty {
+  padding: 40px 0;
+}
+
+.daily-progress-manager .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.daily-progress-manager .ant-card-head {
+  border-bottom: 1px solid var(--neutral-border);
+}
+
+.daily-progress-manager .ant-card-body {
+  padding: 16px;
+}

@@ -7,6 +7,9 @@ import { URL } from 'url'
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
 const dataFile = path.resolve(rootDir, 'data', 'project-data.json')
 const distDir = path.resolve(rootDir, 'dist')
+const lockFile = path.resolve(rootDir, 'data', 'data.lock')
+const MAX_RETRIES = 3
+const RETRY_DELAY = 1000
 
 const ensureDataDir = () => {
   const dir = path.dirname(dataFile)
@@ -30,10 +33,37 @@ const readJsonData = () => {
 const writeJsonData = (data) => {
   try {
     ensureDataDir()
-    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), 'utf-8')
+    const tempFile = dataFile + '.tmp'
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8')
+    fs.renameSync(tempFile, dataFile)
     return true
   } catch {
     return false
+  }
+}
+
+const acquireLock = () => {
+  try {
+    if (fs.existsSync(lockFile)) {
+      const lockTime = parseInt(fs.readFileSync(lockFile, 'utf-8'))
+      const now = Date.now()
+      if (now - lockTime < 30000) {
+        return false
+      }
+    }
+    fs.writeFileSync(lockFile, Date.now().toString(), 'utf-8')
+    return true
+  } catch {
+    return false
+  }
+}
+
+const releaseLock = () => {
+  try {
+    if (fs.existsSync(lockFile)) {
+      fs.unlinkSync(lockFile)
+    }
+  } catch {
   }
 }
 
@@ -58,6 +88,7 @@ const setCorsHeaders = (res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Max-Age', '86400')
 }
 
 const serveStaticFile = (req, res, parsedUrl) => {
@@ -126,7 +157,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET') {
       const data = readJsonData()
       if (!data) {
-        sendJson(res, 404, { error: 'NOT_FOUND' })
+        sendJson(res, 404, { error: 'NOT_FOUND', message: '数据文件不存在' })
         return
       }
       sendJson(res, 200, data)
@@ -137,14 +168,36 @@ const server = http.createServer(async (req, res) => {
       const raw = await getRequestBody(req)
       try {
         const parsed = raw ? JSON.parse(raw) : {}
-        const ok = writeJsonData(parsed)
-        if (!ok) {
-          sendJson(res, 500, { error: 'WRITE_FAILED' })
-          return
+        
+        let retries = 0
+        let ok = false
+        
+        while (retries < MAX_RETRIES && !ok) {
+          if (acquireLock()) {
+            ok = writeJsonData(parsed)
+            releaseLock()
+            
+            if (ok) {
+              sendJson(res, 200, { ok: true, message: '数据保存成功' })
+            } else {
+              retries++
+              if (retries < MAX_RETRIES) {
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
+              }
+            }
+          } else {
+            retries++
+            if (retries < MAX_RETRIES) {
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
+            }
+          }
         }
-        sendJson(res, 200, { ok: true })
+        
+        if (!ok) {
+          sendJson(res, 500, { error: 'WRITE_FAILED', message: '数据保存失败，请稍后重试' })
+        }
       } catch {
-        sendJson(res, 400, { error: 'BAD_REQUEST' })
+        sendJson(res, 400, { error: 'BAD_REQUEST', message: '请求数据格式错误' })
       }
       return
     }
@@ -162,4 +215,3 @@ const port = process.env.PORT || 4173
 server.listen(port, () => {
   process.stdout.write(`Server is running at http://localhost:${port}\n`)
 })
-

@@ -110,6 +110,20 @@
   gap: 24px;
 }
 
+.ai-analysis-btn {
+  font-size: 20px;
+  color: #666;
+  padding: 8px;
+  border-radius: 50%;
+  transition: 0.3s;
+  background: transparent;
+}
+
+.ai-analysis-btn:hover {
+  background: #f0f5ff;
+  color: #667eea;
+}
+
 .user-profile {
   display: flex;
   align-items: center;

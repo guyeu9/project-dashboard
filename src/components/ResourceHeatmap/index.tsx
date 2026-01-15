@@ -1,12 +1,10 @@
-import { useState, useMemo } from 'react'
-import { Card, Select, Button, Space, Radio, Tooltip, Tag, Empty } from 'antd'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { Card, Button, Space, Radio, Tooltip, Tag, Empty } from 'antd'
 import { LeftOutlined, RightOutlined, WarningOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { Task } from '../../types'
 import useStore from '../../store/useStore'
 import './index.css'
-
-const { Option } = Select
 
 interface ResourceHeatmapProps {
   tasks: Task[]
@@ -26,53 +24,75 @@ interface HeatmapData {
 function ResourceHeatmap({ tasks }: ResourceHeatmapProps) {
   const { projects } = useStore()
   const [viewMode, setViewMode] = useState<'number' | 'color'>('color')
-  const [dateRange, setDateRange] = useState<'week' | 'month' | 'custom'>('month')
   const [currentDate, setCurrentDate] = useState(dayjs())
   const [selectedCell, setSelectedCell] = useState<HeatmapData | null>(null)
   const [sidePanelVisible, setSidePanelVisible] = useState(false)
+  const containerElementRef = useRef<HTMLDivElement>(null)
 
   const overloadThreshold = 3
   const idleThreshold = 1
 
+  const dateRange = useMemo(() => {
+    const today = dayjs()
+    const start = today.subtract(30, 'day')
+    const end = today.add(120, 'day')
+    return { start, end, today }
+  }, [])
+
   const allUsers = useMemo(() => {
-    const users = new Set<string>()
-    tasks.forEach(task => {
-      task.assignees.forEach(assignee => users.add(assignee))
+    const userRoles = new Map<string, 'developer' | 'tester'>()
+    
+    projects.forEach(project => {
+      project.developers.forEach(dev => {
+        userRoles.set(dev, 'developer')
+      })
+      project.testers.forEach(tester => {
+        userRoles.set(tester, 'tester')
+      })
     })
-    return Array.from(users).map(name => ({
+    
+    tasks.forEach(task => {
+      task.assignees.forEach(assignee => {
+        if (!userRoles.has(assignee)) {
+          userRoles.set(assignee, 'developer')
+        }
+      })
+    })
+    
+    return Array.from(userRoles.entries()).map(([name, role]) => ({
       id: name,
       name,
-      role: 'developer' as const,
+      role,
     }))
-  }, [tasks])
+  }, [projects, tasks])
 
   const dateRangeDays = useMemo(() => {
-    let start: dayjs.Dayjs
-    let end: dayjs.Dayjs
-
-    switch (dateRange) {
-      case 'week':
-        start = currentDate.startOf('week')
-        end = currentDate.endOf('week')
-        break
-      case 'month':
-        start = currentDate.startOf('month')
-        end = currentDate.endOf('month')
-        break
-      case 'custom':
-        start = currentDate.startOf('month')
-        end = currentDate.endOf('month').add(1, 'month')
-        break
-    }
-
     const days = []
-    let current = start
-    while (current.isBefore(end) || current.isSame(end, 'day')) {
+    let current = dateRange.start
+    while (current.isBefore(dateRange.end) || current.isSame(dateRange.end, 'day')) {
       days.push(current)
       current = current.add(1, 'day')
     }
     return days
-  }, [dateRange, currentDate])
+  }, [dateRange])
+
+  const todayIndex = useMemo(() => {
+    return dateRangeDays.findIndex(day => day.isSame(dateRange.today, 'day'))
+  }, [dateRangeDays, dateRange.today])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (containerElementRef.current && todayIndex !== -1) {
+        const dayWidth = 60
+        const scrollLeft = (todayIndex - 5) * dayWidth
+        containerElementRef.current.scrollTo({
+          left: Math.max(0, scrollLeft),
+          behavior: 'smooth'
+        })
+      }
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [todayIndex])
 
   const heatmapData = useMemo(() => {
     const data: HeatmapData[] = []
@@ -122,35 +142,23 @@ function ResourceHeatmap({ tasks }: ResourceHeatmapProps) {
   }
 
   const handlePrevPeriod = () => {
-    switch (dateRange) {
-      case 'week':
-        setCurrentDate(currentDate.subtract(1, 'week'))
-        break
-      case 'month':
-        setCurrentDate(currentDate.subtract(1, 'month'))
-        break
-      case 'custom':
-        setCurrentDate(currentDate.subtract(1, 'month'))
-        break
-    }
+    setCurrentDate(currentDate.subtract(1, 'month'))
   }
 
   const handleNextPeriod = () => {
-    switch (dateRange) {
-      case 'week':
-        setCurrentDate(currentDate.add(1, 'week'))
-        break
-      case 'month':
-        setCurrentDate(currentDate.add(1, 'month'))
-        break
-      case 'custom':
-        setCurrentDate(currentDate.add(1, 'month'))
-        break
-    }
+    setCurrentDate(currentDate.add(1, 'month'))
   }
 
   const handleToday = () => {
     setCurrentDate(dayjs())
+    if (containerElementRef.current && todayIndex !== -1) {
+      const dayWidth = 60
+      const scrollLeft = (todayIndex - 5) * dayWidth
+      containerElementRef.current.scrollTo({
+        left: Math.max(0, scrollLeft),
+        behavior: 'smooth'
+      })
+    }
   }
 
   const getCellColor = (cell: HeatmapData) => {
@@ -184,21 +192,12 @@ function ResourceHeatmap({ tasks }: ResourceHeatmapProps) {
         <div className="heatmap-toolbar">
           <Space>
             <Button icon={<LeftOutlined />} onClick={handlePrevPeriod}>
-              上{dateRange === 'week' ? '周' : '月'}
+              上个月
             </Button>
             <Button onClick={handleToday}>今天</Button>
             <Button icon={<RightOutlined />} onClick={handleNextPeriod}>
-              下{dateRange === 'week' ? '周' : '月'}
+              下个月
             </Button>
-            <Select
-              value={dateRange}
-              onChange={setDateRange}
-              style={{ width: 120 }}
-            >
-              <Option value="week">本周</Option>
-              <Option value="month">本月</Option>
-              <Option value="custom">下月</Option>
-            </Select>
           </Space>
 
           <Space>
@@ -218,54 +217,71 @@ function ResourceHeatmap({ tasks }: ResourceHeatmapProps) {
           </div>
         )}
 
-        <div className="heatmap-container">
-          {allUsers.length === 0 ? (
-            <Empty description="暂无人员数据" />
-          ) : (
-            <div className="heatmap-grid">
-              <div className="heatmap-header">
-                <div className="corner-cell">人员\日期</div>
-                {dateRangeDays.map(date => (
+        <div className="heatmap-wrapper">
+          <div className="heatmap-sidebar">
+            <div className="sidebar-header">人员</div>
+            {allUsers.map(user => (
+              <div key={user.id} className="sidebar-row">
+                <div className="user-name">{user.name}</div>
+                <div className="user-role">
+                  {user.role === 'developer' ? '开发' : '测试'}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="heatmap-main" ref={containerElementRef}>
+            {allUsers.length === 0 ? (
+              <Empty description="暂无人员数据" />
+            ) : (
+              <div className="heatmap-grid">
+                <div className="heatmap-header">
+                  {dateRangeDays.map(date => (
+                    <div
+                      key={date.format('YYYY-MM-DD')}
+                      className={`date-cell ${date.isSame(dayjs(), 'day') ? 'today' : ''}`}
+                    >
+                      {date.format('M/D')}
+                    </div>
+                  ))}
+                </div>
+
+                {todayIndex !== -1 && (
                   <div
-                    key={date.format('YYYY-MM-DD')}
-                    className={`date-cell ${date.isSame(dayjs(), 'day') ? 'today' : ''}`}
-                  >
-                    {date.format('M/D')}
+                    className="today-line-vertical"
+                    style={{
+                      left: `${todayIndex * 60 + 30}px`,
+                      height: '100%'
+                    }}
+                  />
+                )}
+
+                {allUsers.map(user => (
+                  <div key={user.id} className="heatmap-row">
+                    {dateRangeDays.map(date => {
+                      const dateStr = date.format('YYYY-MM-DD')
+                      const cell = heatmapData.find(
+                        c => c.userId === user.id && c.date === dateStr
+                      )
+                      return (
+                        <Tooltip key={dateStr} title={cell ? getCellTitle(cell) : '无任务'}>
+                          <div
+                            className={`heatmap-cell ${cell?.isOverloaded ? 'overloaded' : ''} ${cell?.isIdle ? 'idle' : ''}`}
+                            style={{
+                              backgroundColor: cell ? getCellColor(cell) : '#f5f5f5',
+                            }}
+                            onClick={() => cell && handleCellClick(cell)}
+                          >
+                            {getCellContent(cell!)}
+                          </div>
+                        </Tooltip>
+                      )
+                    })}
                   </div>
                 ))}
               </div>
-
-              {allUsers.map(user => (
-                <div key={user.id} className="heatmap-row">
-                  <div className="user-cell">
-                    <div className="user-name">{user.name}</div>
-                    <div className="user-role">
-                      {user.role === 'developer' ? '开发' : '测试'}
-                    </div>
-                  </div>
-                  {dateRangeDays.map(date => {
-                    const dateStr = date.format('YYYY-MM-DD')
-                    const cell = heatmapData.find(
-                      c => c.userId === user.id && c.date === dateStr
-                    )
-                    return (
-                      <Tooltip key={dateStr} title={cell ? getCellTitle(cell) : '无任务'}>
-                        <div
-                          className={`heatmap-cell ${cell?.isOverloaded ? 'overloaded' : ''} ${cell?.isIdle ? 'idle' : ''}`}
-                          style={{
-                            backgroundColor: cell ? getCellColor(cell) : '#f5f5f5',
-                          }}
-                          onClick={() => cell && handleCellClick(cell)}
-                        >
-                          {getCellContent(cell!)}
-                        </div>
-                      </Tooltip>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="heatmap-legend">

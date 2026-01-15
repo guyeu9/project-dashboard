@@ -1,3 +1,18 @@
+export type OperationType = 'create' | 'update' | 'delete'
+export type EntityType = 'project' | 'task' | 'taskType' | 'pmo' | 'productManager'
+
+export interface HistoryRecord {
+  id: string
+  entityType: EntityType
+  entityId: string
+  entityName: string
+  operation: OperationType
+  operator: string
+  operatedAt: string
+  changes?: Record<string, { from: unknown; to: unknown }>
+  projectId?: string
+}
+
 export interface Project {
   id: string
   name: string
@@ -47,6 +62,18 @@ export interface TaskType {
   enabled: boolean
 }
 
+export interface PMO {
+  id: string
+  name: string
+  enabled: boolean
+}
+
+export interface ProductManager {
+  id: string
+  name: string
+  enabled: boolean
+}
+
 export interface ResourceSchedule {
   userId: string
   userName: string
@@ -90,4 +117,21 @@ export interface NotificationItem {
   createdAt: string
   status: NotificationStatus
   projectName: string
+}
+
+export type AIMessageRole = 'user' | 'assistant' | 'system'
+
+export interface AIMessage {
+  id: string
+  role: AIMessageRole
+  content: string
+  timestamp: string
+}
+
+export type AIAnalysisScope = 'all' | 'single'
+
+export interface AIAnalysisContext {
+  scope: AIAnalysisScope
+  projectId?: string
+  projectName?: string
 }

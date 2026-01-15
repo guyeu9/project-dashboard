@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Card, Button, Space, Table, Tag, Modal, Input, Select, App as AntApp } from 'antd'
-import { ImportOutlined, ClearOutlined, FileTextOutlined } from '@ant-design/icons'
-import { Task } from '../../types'
+import { ImportOutlined, ClearOutlined, FileTextOutlined, PlusOutlined } from '@ant-design/icons'
+import { Task, Project } from '../../types'
 import useStore from '../../store/useStore'
+import useAuthStore from '../../store/authStore'
+import ProjectEditModal from '../ProjectEditModal'
 import dayjs from 'dayjs'
 import './index.css'
 
-const { TextArea } = Input
 const { Option } = Select
 
 interface ParsedTask {
@@ -19,12 +20,16 @@ interface ParsedTask {
 }
 
 function SmartParser() {
-  const { addTask, taskTypes } = useStore()
+  const { addTask, addProject, updateProject, taskTypes } = useStore()
   const { message } = AntApp.useApp()
+  const { role } = useAuthStore()
+  const isAdmin = role === 'admin'
   const [inputText, setInputText] = useState('')
   const [parsedTasks, setParsedTasks] = useState<ParsedTask[]>([])
   const [importModalVisible, setImportModalVisible] = useState(false)
   const [selectedProjectId, setSelectedProjectId] = useState<string>('1')
+  const [editModalVisible, setEditModalVisible] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
 
   const parseText = (text: string): ParsedTask[] => {
     try {
@@ -153,6 +158,61 @@ function SmartParser() {
     setImportModalVisible(false)
   }
 
+  const handleAddProject = () => {
+    setEditingProject(null)
+    setEditModalVisible(true)
+  }
+
+  const handleProjectCreated = (project: Project) => {
+    if (!taskTypes || taskTypes.length === 0) {
+      message.error('任务类型数据未加载，请刷新页面重试')
+      return false
+    }
+    
+    addProject(project)
+    
+    const tasksToAdd: Task[] = parsedTasks.map((parsedTask, index) => {
+      const taskType = taskTypes.find(t => t.name === parsedTask.phase) || taskTypes[0] 
+      
+      return {
+        id: `task-${Date.now()}-${index}`,
+        projectId: project.id,
+        name: `${parsedTask.phase}任务`,
+        type: taskType,
+        status: 'normal' as const,
+        progress: 0,
+        startDate: parsedTask.startDate,
+        endDate: parsedTask.endDate,
+        assignees: parsedTask.assignees || [],
+        dailyProgress: '',
+        remark: parsedTask.remark || '',
+      }
+    })
+    
+    tasksToAdd.forEach(task => addTask(task))
+    message.success(`成功创建项目并导入 ${tasksToAdd.length} 个任务`)
+    setEditModalVisible(false)
+    setParsedTasks([])
+    setInputText('')
+    
+    return false
+  }
+
+  const handleProjectSave = (projectId: string, updates: Partial<Project>) => {
+    if (!isAdmin) {
+      message.warning('当前为游客，仅管理员可以保存项目修改')
+      return
+    }
+    updateProject(projectId, updates)
+    setEditModalVisible(false)
+    setEditingProject(null)
+  }
+
+  const handleProjectCancel = () => {
+    setEditModalVisible(false)
+    setEditingProject(null)
+  }
+
   const columns = [
     {
       title: '任务阶段',
@@ -246,7 +306,7 @@ function SmartParser() {
                 使用示例文本
               </Button>
             </div>
-            <TextArea
+            <Input.TextArea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="请输入项目排期文本，例如：&#10;开发排期：12.18-1.14&#10;开发联调：1.19-1.21 @张三 @李四"
@@ -255,6 +315,14 @@ function SmartParser() {
             />
             <div className="button-group">
               <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleAddProject}
+                  disabled={!isAdmin}
+                >
+                  新建项目
+                </Button>
                 <Button
                   type="primary"
                   icon={<FileTextOutlined />}
@@ -327,6 +395,15 @@ function SmartParser() {
           </Select>
         </div>
       </Modal>
+
+      <ProjectEditModal
+        visible={editModalVisible}
+        project={editingProject}
+        onSave={handleProjectSave}
+        onAdd={() => {}}
+        onCancel={handleProjectCancel}
+        onProjectCreated={handleProjectCreated}
+      />
     </div>
   )
 }

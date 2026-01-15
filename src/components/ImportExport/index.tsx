@@ -10,7 +10,7 @@ import './index.css'
 const { Dragger } = Upload
 
 function ImportExport() {
-  const { projects, tasks, setProjects, setTasks } = useStore()
+  const { projects, tasks, pmos, productManagers, setProjects, setTasks, setPMOs, setProductManagers } = useStore()
   const { message } = AntApp.useApp()
   const [exportModalVisible, setExportModalVisible] = useState(false)
   const [exportFormat, setExportFormat] = useState<'excel' | 'json'>('excel')
@@ -18,13 +18,13 @@ function ImportExport() {
 
   const handleExportExcel = () => {
     setExportFormat('excel')
-    setExportData({ projects, tasks })
+    setExportData({ projects, tasks, pmos, productManagers })
     setExportModalVisible(true)
   }
 
   const handleExportJSON = () => {
     setExportFormat('json')
-    setExportData({ projects, tasks })
+    setExportData({ projects, tasks, pmos, productManagers })
     setExportModalVisible(true)
   }
 
@@ -186,16 +186,37 @@ function ImportExport() {
       try {
         const data = JSON.parse(e.target?.result as string)
         
+        let importCount = 0
+        
         if (data.projects && Array.isArray(data.projects)) {
           setProjects(data.projects)
           message.success(`成功导入 ${data.projects.length} 个项目`)
+          importCount++
         }
         
         if (data.tasks && Array.isArray(data.tasks)) {
           setTasks(data.tasks)
           message.success(`成功导入 ${data.tasks.length} 个任务`)
+          importCount++
+        }
+        
+        if (data.pmos && Array.isArray(data.pmos)) {
+          setPMOs(data.pmos)
+          message.success(`成功导入 ${data.pmos.length} 个PMO`)
+          importCount++
+        }
+        
+        if (data.productManagers && Array.isArray(data.productManagers)) {
+          setProductManagers(data.productManagers)
+          message.success(`成功导入 ${data.productManagers.length} 个产品经理`)
+          importCount++
+        }
+        
+        if (importCount === 0) {
+          message.warning('未找到可导入的数据')
         }
       } catch (error) {
+        console.error('导入失败:', error)
         message.error('文件格式错误，请上传有效的JSON文件')
       }
     }
@@ -293,7 +314,7 @@ function ImportExport() {
       >
         <div className="export-preview">
           <h4>导出格式：{exportFormat === 'excel' ? 'Excel (.xlsx)' : 'JSON (.json)'}</h4>
-          <h4>包含数据：{projects.length} 个项目，{tasks.length} 个任务</h4>
+          <h4>包含数据：{projects.length} 个项目，{tasks.length} 个任务，{pmos.length} 个PMO，{productManagers.length} 个产品经理</h4>
           
           {exportFormat === 'excel' && (
             <div>
@@ -316,7 +337,14 @@ function ImportExport() {
                 <pre>{JSON.stringify({ 
                   projects: projects.slice(0, 2), 
                   tasks: tasks.slice(0, 2),
-                  _total: { projects: projects.length, tasks: tasks.length },
+                  pmos: pmos.slice(0, 2),
+                  productManagers: productManagers.slice(0, 2),
+                  _total: { 
+                    projects: projects.length, 
+                    tasks: tasks.length,
+                    pmos: pmos.length,
+                    productManagers: productManagers.length
+                  },
                   _info: "预览仅展示前2条数据"
                 }, null, 2)}</pre>
               </div>

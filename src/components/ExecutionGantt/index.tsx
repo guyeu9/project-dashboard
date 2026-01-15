@@ -10,9 +10,10 @@ interface ExecutionGanttProps {
   onTaskDoubleClick: (task: Task) => void
   onViewHistory?: (taskId: string) => void
   onDeleteTask?: (taskId: string) => void
+  isAdmin?: boolean
 }
 
-function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask }: ExecutionGanttProps) {
+function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask, isAdmin }: ExecutionGanttProps) {
   const [currentDate, setCurrentDate] = useState(dayjs())
   const tableRef = useRef<HTMLDivElement>(null)
 
@@ -57,7 +58,7 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask 
         key: 'assignees',
         width: 120,
         render: (assignees: string[]) => (
-          <Avatar.Group maxCount={2} size="small">
+          <Avatar.Group max={{ count: 2 }} size="small">
             {assignees.map((name, index) => (
               <Avatar key={index} style={{ backgroundColor: '#87d068' }}>
                 {name.charAt(0)}
@@ -111,8 +112,9 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask 
               cancelText="取消"
               onConfirm={() => onDeleteTask?.(record.id)}
               okButtonProps={{ danger: true }}
+              disabled={!isAdmin}
             >
-              <Button type="link" size="small" danger disabled={!onDeleteTask}>
+              <Button type="link" size="small" danger disabled={!isAdmin}>
                 删除
               </Button>
             </Popconfirm>

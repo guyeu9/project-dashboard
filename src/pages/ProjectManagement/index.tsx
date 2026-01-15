@@ -6,13 +6,15 @@ import {
   UnorderedListOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
-  SettingOutlined,
-  ArrowRightOutlined
+  ArrowRightOutlined,
+  RobotOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import useStore from '../../store/useStore'
+import useAIAnalysisStore from '../../store/aiStore'
 import useAuthStore from '../../store/authStore'
 import ProjectEditModal from '../../components/ProjectEditModal'
+import AIAnalysisModal from '../../components/AIAnalysisModal'
 import { Project } from '../../types'
 import './index.css'
 import { useNavigate } from 'react-router-dom'
@@ -22,12 +24,13 @@ const { RangePicker } = DatePicker
 
 function ProjectManagement() {
   const { projects, addProject, updateProject, deleteProject } = useStore()
+  const { openModal } = useAIAnalysisStore()
   const { role } = useAuthStore()
   const { message } = AntApp.useApp()
   const navigate = useNavigate()
   const isAdmin = role === 'admin'
   const [loading] = useState(false)
-  const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('list')
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [ownerFilter, setOwnerFilter] = useState<string[]>([])
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
@@ -36,6 +39,10 @@ function ProjectManagement() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+
+  const handleAIAnalysis = (project: Project) => {
+    openModal({ scope: 'single', projectId: project.id, projectName: project.name })
+  }
 
   const statusOptions = [
     { label: '待开始', value: 'pending' },
@@ -186,19 +193,37 @@ function ProjectManagement() {
             styles={{ body: { padding: '24px' } }}
           >
             <div className="card-header-v3">
-              <Tag 
-                color={getStatusColor(project.status)} 
-                className="status-tag-v3"
-              >
-                {getStatusText(project.status)}
-              </Tag>
-              <Space>
+              <div className="header-left-v3">
+                <Tag 
+                  color={getStatusColor(project.status)} 
+                  className="status-tag-v3"
+                >
+                  {getStatusText(project.status)}
+                </Tag>
                 <Button
                   type="text"
                   size="small"
-                  icon={<SettingOutlined style={{ fontSize: '14px' }} />}
+                  icon={<RobotOutlined />}
                   onClick={(e) => {
                     e.stopPropagation();
+                    handleAIAnalysis(project);
+                  }}
+                  className="ai-btn-v3"
+                >
+                  AI分析
+                </Button>
+              </div>
+              <Space size={4}>
+                <Button
+                  type="text"
+                  size="small"
+                  disabled={!isAdmin}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.stopPropagation();
+                    if (!isAdmin) {
+                      message.warning('当前为游客，仅管理员可以编辑项目')
+                      return
+                    }
                     handleEditProject(project);
                   }}
                   className="edit-btn-v3"
@@ -209,17 +234,22 @@ function ProjectManagement() {
                   title="确认删除该项目？"
                   okText="删除"
                   cancelText="取消"
-                  onConfirm={(e) => {
-                    e.stopPropagation();
+                  onConfirm={() => {
+                    if (!isAdmin) {
+                      message.warning('当前为游客，仅管理员可以删除项目')
+                      return
+                    }
                     deleteProject(project.id);
                   }}
                   okButtonProps={{ danger: true }}
+                  disabled={!isAdmin}
                 >
                   <Button
                     type="text"
                     size="small"
                     danger
-                    onClick={(e) => e.stopPropagation()}
+                    disabled={!isAdmin}
+                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => e.stopPropagation()}
                     className="delete-btn-v3"
                   >
                     删除
@@ -327,8 +357,25 @@ function ProjectManagement() {
               <Button 
                 type="text" 
                 size="small" 
+                icon={<RobotOutlined />}
                 onClick={(e) => {
                   e.stopPropagation();
+                  handleAIAnalysis(project);
+                }}
+                className="ai-btn-list"
+              >
+                AI分析
+              </Button>
+              <Button 
+                type="text" 
+                size="small" 
+                disabled={!isAdmin}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isAdmin) {
+                    message.warning('当前为游客，仅管理员可以编辑项目')
+                    return
+                  }
                   handleEditProject(project);
                 }}
                 className="edit-btn-list"
@@ -338,6 +385,7 @@ function ProjectManagement() {
               <Button 
                 type="primary" 
                 size="small" 
+                disabled={!isAdmin}
                 className="btn-purple-mini"
               >
                 管理
@@ -346,18 +394,22 @@ function ProjectManagement() {
                 title="确认删除该项目？"
                 okText="删除"
                 cancelText="取消"
-                onConfirm={(e) => {
-                  e.stopPropagation();
+                onConfirm={() => {
+                  if (!isAdmin) {
+                    message.warning('当前为游客，仅管理员可以删除项目')
+                    return
+                  }
                   deleteProject(project.id);
                 }}
                 okButtonProps={{ danger: true }}
+                disabled={!isAdmin}
               >
                 <Button 
                   type="text" 
                   size="small" 
                   danger
-                  onClick={(e) => e.stopPropagation()}
-                  className="delete-btn-list"
+                  disabled={!isAdmin}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => e.stopPropagation()}
                 >
                   删除
                 </Button>
@@ -500,6 +552,8 @@ function ProjectManagement() {
         onAdd={handleProjectAdd}
         onCancel={handleProjectCancel}
       />
+
+      <AIAnalysisModal />
     </div>
   )
 }

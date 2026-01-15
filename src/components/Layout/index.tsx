@@ -11,14 +11,65 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   AppstoreOutlined,
+  QuestionCircleOutlined,
+  RobotOutlined,
 } from '@ant-design/icons'
 import NotificationDropdown from '../NotificationDropdown'
+import AIAnalysisModal from '../AIAnalysisModal'
 import useAuthStore from '../../store/authStore'
 import useNotificationStore from '../../store/notificationStore'
+import useAIAnalysisStore from '../../store/aiStore'
 import { startReminderTimer, cleanupReminderTimer } from '../../utils/notificationUtils'
 import './index.css'
 
 const { Header, Sider, Content } = AntLayout
+
+interface LoginFormProps {
+  role: string
+  onQuickAdmin: () => void
+}
+
+function LoginForm({ role, onQuickAdmin }: LoginFormProps) {
+  const [form] = Form.useForm()
+
+  return (
+    <Form
+      form={form}
+      layout="vertical"
+      initialValues={{ username: 'admin', password: 'admin' }}
+    >
+      {role !== 'admin' && (
+        <>
+          <Form.Item
+            label="账号"
+            name="username"
+            rules={[{ required: true, message: '请输入账号' }]}
+          >
+            <Input placeholder="请输入账号，默认为 admin" />
+          </Form.Item>
+          <Form.Item
+            label="密码"
+            name="password"
+            rules={[{ required: true, message: '请输入密码' }]}
+          >
+            <Input.Password placeholder="请输入密码，默认为 admin" />
+          </Form.Item>
+          <Space style={{ marginTop: 8 }}>
+            <Button type="link" onClick={onQuickAdmin}>
+              管理员一键登录
+            </Button>
+          </Space>
+        </>
+      )}
+      {role === 'admin' && (
+        <div>
+          <p>当前已以 <strong>管理员</strong> 身份登录。</p>
+          <p>可以在「设置中心」和各页面修改项目与任务数据。</p>
+        </div>
+      )}
+    </Form>
+  )
+}
 
 function CustomLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
@@ -26,10 +77,13 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
   const { message } = AntApp.useApp()
   const [collapsed, setCollapsed] = useState(false)
   const { notifications, unreadCount, confirmNotification } = useNotificationStore()
-  const { role, initFromCookie, login, quickAdminLogin, logout } = useAuthStore()
+  const { role, initFromCookie, quickAdminLogin, logout } = useAuthStore()
+  const { openModal } = useAIAnalysisStore()
   const [loginVisible, setLoginVisible] = useState(false)
-  const [loginLoading, setLoginLoading] = useState(false)
-  const [form] = Form.useForm()
+
+  const handleAIAnalysis = () => {
+    openModal({ scope: 'all' })
+  }
 
   const menuItems = [
     { key: '/', icon: <DashboardOutlined />, label: '项目全景' },
@@ -38,6 +92,7 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
     { key: '/smart-parser', icon: <FileTextOutlined />, label: '智能解析' },
     { key: '/data-management', icon: <FileTextOutlined />, label: '数据管理' },
     { key: '/settings', icon: <SettingOutlined />, label: '设置中心' },
+    { key: '/user-guide', icon: <QuestionCircleOutlined />, label: '使用说明' },
   ]
 
   const getSelectedMenuKey = () => {
@@ -60,20 +115,6 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     initFromCookie()
   }, [initFromCookie])
-
-  const handleLogin = () => {
-    form.validateFields().then(values => {
-      setLoginLoading(true)
-      const ok = login(values.username, values.password)
-      setLoginLoading(false)
-      if (ok) {
-        message.success('登录成功，当前为管理员身份')
-        setLoginVisible(false)
-      } else {
-        message.error('账号或密码错误')
-      }
-    })
-  }
 
   const handleQuickAdmin = () => {
     quickAdminLogin()
@@ -155,6 +196,25 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
               </h1>
             </div>
             <div className="header-right">
+              <Button
+                type="primary"
+                size="large"
+                icon={<RobotOutlined />}
+                onClick={handleAIAnalysis}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 24px',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  height: 'auto',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                  marginRight: '16px'
+                }}
+              >
+                AI 一键分析
+              </Button>
               <NotificationDropdown 
                 notifications={notifications}
                 unreadCount={unreadCount}
@@ -195,44 +255,18 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
         title={role === 'admin' ? '账户信息' : '管理员登录'}
         open={loginVisible}
         onCancel={() => setLoginVisible(false)}
-        onOk={role === 'admin' ? handleLogout : handleLogin}
+        onOk={role === 'admin' ? handleLogout : undefined}
         okText={role === 'admin' ? '退出登录' : '登录'}
-        confirmLoading={loginLoading}
       >
-        {role !== 'admin' && (
-          <Form
-            form={form}
-            layout="vertical"
-            initialValues={{ username: 'admin', password: 'admin' }}
-          >
-            <Form.Item
-              label="账号"
-              name="username"
-              rules={[{ required: true, message: '请输入账号' }]}
-            >
-              <Input placeholder="请输入账号，默认为 admin" />
-            </Form.Item>
-            <Form.Item
-              label="密码"
-              name="password"
-              rules={[{ required: true, message: '请输入密码' }]}
-            >
-              <Input.Password placeholder="请输入密码，默认为 admin" />
-            </Form.Item>
-            <Space style={{ marginTop: 8 }}>
-              <Button type="link" onClick={handleQuickAdmin}>
-                管理员一键登录
-              </Button>
-            </Space>
-          </Form>
-        )}
-        {role === 'admin' && (
-          <div>
-            <p>当前已以 <strong>管理员</strong> 身份登录。</p>
-            <p>可以在「设置中心」和各页面修改项目与任务数据。</p>
-          </div>
+        {loginVisible && (
+          <LoginForm
+          role={role}
+          onQuickAdmin={handleQuickAdmin}
+        />
         )}
       </Modal>
+
+      <AIAnalysisModal />
     </ConfigProvider>
   )
 }

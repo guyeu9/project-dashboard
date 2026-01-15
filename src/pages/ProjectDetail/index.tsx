@@ -15,7 +15,7 @@ function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { message } = AntApp.useApp()
-  const { projects, tasks, updateTask, addTask, taskTypes, updateProject } = useStore()
+  const { projects, tasks, updateTask, addTask, taskTypes, updateProject, deleteTask } = useStore()
   const { role } = useAuthStore()
   const isAdmin = role === 'admin'
   
@@ -32,33 +32,6 @@ function ProjectDetail() {
   const projectTasks = useMemo(() => {
     return tasks.filter(t => t.projectId === id)
   }, [tasks, id])
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const projectLatestRiskStatus = useMemo(() => {
-    let latestRiskRecord: any = null
-    let latestDate = ''
-    
-    projectTasks.forEach(task => {
-      if (task.dailyRecords) {
-        task.dailyRecords.forEach(record => {
-          if ((record.status === 'risk' || record.status === 'delayed') && record.date > latestDate) {
-            latestDate = record.date
-            latestRiskRecord = record
-          }
-        })
-      }
-    })
-    
-    if (latestRiskRecord) {
-      return latestRiskRecord.status === 'risk' ? 'risk' : 'delayed'
-    }
-    
-    if (project?.status === 'risk' || project?.status === 'delayed' || project?.status === 'normal') {
-      return project.status
-    }
-    
-    return 'normal'
-  }, [projectTasks, project])
 
   useEffect(() => {
     setLoading(true)
@@ -187,6 +160,7 @@ function ProjectDetail() {
             onTaskDoubleClick={handleTaskDoubleClick}
             onViewHistory={handleViewHistory}
             onDeleteTask={handleDeleteTask}
+            isAdmin={isAdmin}
           />
         </Card>
       ),
