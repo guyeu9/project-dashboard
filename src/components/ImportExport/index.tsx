@@ -44,6 +44,9 @@ function ImportExport() {
           '负责人': p.owner,
           '产品经理': p.productManager || '-',
           'PMO': p.pmo || '-',
+          '合作方': p.partners?.join('、') || '-',
+          '开发人员': p.developers?.join('、') || '-',
+          '测试人员': p.testers?.join('、') || '-',
           '备注': p.remark || ''
         }))
         const summarySheet = XLSX.utils.json_to_sheet(projectSummaryData)
@@ -64,10 +67,35 @@ function ImportExport() {
             '开始': project.startDate,
             '结束': project.endDate,
             '负责人': project.owner,
+            '产品经理': project.productManager || '-',
+            'PMO': project.pmo || '-',
+            '合作方': project.partners?.join('、') || '-',
+            '开发人员': project.developers?.join('、') || '-',
+            '测试人员': project.testers?.join('、') || '-',
+            '群组链接': project.chatGroupLinks?.join('; ') || '-',
+            '联系人': project.contacts?.map(c => `${c.name}(${c.role})`).join('; ') || '-',
             '内容/备注': project.remark || '-'
           })
           
           sheetData.push({}) // 空行
+
+          // 每日任务记录
+          sheetData.push({ '类别': '每日任务记录' })
+          projectTasks.forEach(t => {
+            if (t.dailyRecords && t.dailyRecords.length > 0) {
+              t.dailyRecords.forEach(record => {
+                sheetData.push({
+                  '类别': '每日记录',
+                  '任务名称': t.name,
+                  '日期': record.date,
+                  '进度': `${record.progress}%`,
+                  '状态': record.status === 'normal' ? '正常' : record.status === 'risk' ? '风险' : '延期',
+                  '参与人员': record.assignees.join('、'),
+                  '详细内容': record.content
+                })
+              })
+            }
+          })
 
           // 任务明细
           sheetData.push({ '类别': '任务明细' })
@@ -75,11 +103,16 @@ function ImportExport() {
             sheetData.push({
               '类别': '任务',
               '名称': t.name,
-              '类型': t.type.name,
+              '类型ID': t.type.id,
+              '类型名称': t.type.name,
+              '类型颜色': t.type.color,
+              '是否启用': t.type.enabled ? '是' : '否',
+              '状态': t.status === 'normal' ? '正常' : t.status === 'risk' ? '风险' : t.status === 'delayed' ? '延期' : t.status,
               '进度': `${t.progress}%`,
               '开始': t.startDate,
               '结束': t.endDate,
               '参与人员': t.assignees.join('、'),
+              '每日进度': t.dailyProgress || '-',
               '内容/备注': t.remark || '-'
             })
           })
@@ -140,12 +173,23 @@ function ImportExport() {
           // 设置列宽
           const wscols = [
             { wch: 15 }, // 类别
-            { wch: 25 }, // 名称/日期
-            { wch: 15 }, // 类型/来源
-            { wch: 10 }, // 进度
-            { wch: 15 }, // 开始/状态
-            { wch: 15 }, // 结束/人员
-            { wch: 50 }, // 备注/详细内容
+            { wch: 25 }, // 名称/任务名称
+            { wch: 15 }, // 进度
+            { wch: 12 }, // 开始
+            { wch: 12 }, // 结束
+            { wch: 15 }, // 负责人/状态
+            { wch: 15 }, // 产品经理/参与人员
+            { wch: 15 }, // PMO/日期
+            { wch: 30 }, // 合作方
+            { wch: 40 }, // 开发人员
+            { wch: 40 }, // 测试人员
+            { wch: 50 }, // 群组链接
+            { wch: 40 }, // 联系人
+            { wch: 20 }, // 类型ID
+            { wch: 15 }, // 类型颜色
+            { wch: 10 }, // 是否启用
+            { wch: 30 }, // 每日进度
+            { wch: 60 }, // 备注/详细内容
           ]
           projectSheet['!cols'] = wscols
 

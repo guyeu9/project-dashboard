@@ -1,8 +1,186 @@
 import { create } from 'zustand'
 import { AIMessage, AIAnalysisContext, Project, Task } from '../types'
 
-const AI_API_BASE_URL = 'https://api.gemai.cc'
-const AI_API_KEY = 'sk-zmuSxlt6tJdSFTwc5fizTV8AUvuXN5OZBH7PTMZcSTEzVhxO'
+// AI 服务提供商类型
+export type AIProviderType = 'gemini' | 'openai'
+
+// AI 服务提供商接口
+export interface AIProvider {
+  id: string
+  name: string
+  baseUrl: string
+  apiKey: string
+  model: string
+  type: AIProviderType
+  enabled: boolean
+}
+
+// 模型信息接口
+export interface AIModel {
+  id: string
+  name: string
+  description?: string
+}
+
+// 预设的 AI 服务提供商
+const DEFAULT_PROVIDERS: AIProvider[] = [
+  {
+    id: 'gemini-default',
+    name: 'Gemini (默认)',
+    baseUrl: 'https://api.gemai.cc',
+    apiKey: 'sk-zmuSxlt6tJdSFTwc5fizTV8AUvuXN5OZBH7PTMZcSTEzVhxO',
+    model: '[福利]gemini-3-flash-preview-maxthinking',
+    type: 'gemini',
+    enabled: true
+  },
+  {
+    id: 'newapi-default',
+    name: 'New API',
+    baseUrl: 'https://api.zscc.in',
+    apiKey: 'sk-HRZftNK26TslqURsawczI1nJnJVpA0jBi6m28B5jwDkfzIVI',
+    model: 'gpt-4o-mini',
+    type: 'openai',
+    enabled: true
+  }
+]
+
+// 从 localStorage 加载配置
+function loadProvidersFromStorage(): AIProvider[] {
+  try {
+    const saved = localStorage.getItem('ai-providers')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return Array.isArray(parsed) ? parsed : DEFAULT_PROVIDERS
+    }
+  } catch (error) {
+    console.error('Failed to load providers from storage:', error)
+  }
+  return DEFAULT_PROVIDERS
+}
+
+// 保存配置到 localStorage
+function saveProvidersToStorage(providers: AIProvider[]): void {
+  try {
+    localStorage.setItem('ai-providers', JSON.stringify(providers))
+  } catch (error) {
+    console.error('Failed to save providers to storage:', error)
+  }
+}
+
+// 从 localStorage 加载当前选中的提供商
+function loadCurrentProviderId(): string {
+  try {
+    const saved = localStorage.getItem('ai-current-provider-id')
+    if (saved) {
+      return saved
+    }
+  } catch (error) {
+    console.error('Failed to load current provider from storage:', error)
+  }
+  return DEFAULT_PROVIDERS[0].id
+}
+
+// 保存当前选中的提供商到 localStorage
+function saveCurrentProviderId(providerId: string): void {
+  try {
+    localStorage.setItem('ai-current-provider-id', providerId)
+  } catch (error) {
+    console.error('Failed to save current provider to storage:', error)
+  }
+}
+
+// 获取 OpenAI 兼容 API 的模型列表
+async function fetchOpenAIModels(baseUrl: string, apiKey: string): Promise<AIModel[]> {
+  try {
+    console.log('Fetching OpenAI models from:', baseUrl)
+    
+    const response = await fetch(`${baseUrl}/v1/models`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Failed to fetch models:', errorText)
+      throw new Error(`Failed to fetch models: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log('Models response:', data)
+
+    // OpenAI API 返回格式: { object: "list", data: [{ id: "gpt-4", ... }] }
+    if (data.data && Array.isArray(data.data)) {
+      return data.data.map((model: any) => ({
+        id: model.id,
+        name: model.id,
+        description: model.description || ''
+      }))
+    }
+
+    return []
+  } catch (error) {
+    console.error('Error fetching OpenAI models:', error)
+    throw error
+  }
+}
+
+// 获取 Gemini API 的模型列表
+async function fetchGeminiModels(baseUrl: string, apiKey: string): Promise<AIModel[]> {
+  try {
+    console.log('Fetching Gemini models from:', baseUrl)
+    
+    // Gemini API 使用不同的端点来获取模型列表
+    const response = await fetch(`${baseUrl}/v1beta/models`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Failed to fetch Gemini models:', errorText)
+      throw new Error(`Failed to fetch Gemini models: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log('[Gemini Models] Raw response:', JSON.stringify(data).substring(0, 500) + '...')
+    
+    // Gemini API 返回格式：{ models: [{ name: "models/gemini-pro", ... }] }
+    if (data.models && Array.isArray(data.models)) {
+      console.log(`[Gemini Models] Found ${data.models.length} models`)
+      
+      // 不过滤模型，直接返回所有模型
+      // 因为 Gemini 模型名称可能不包含 'generateContent' 关键词
+      return data.models.map((model: any) => ({
+        id: model.name,
+        name: model.displayName || model.name,
+        description: model.description || ''
+      }))
+    }
+    
+    console.warn('[Gemini Models] No models found or invalid format')
+    return []
+  } catch (error) {
+    console.error('Error fetching Gemini models:', error)
+    throw error
+  }
+}
+
+// 获取 AI 服务提供商的模型列表
+export async function fetchProviderModels(provider: AIProvider): Promise<AIModel[]> {
+  if (provider.type === 'openai') {
+    return await fetchOpenAIModels(provider.baseUrl, provider.apiKey)
+  } else if (provider.type === 'gemini') {
+    return await fetchGeminiModels(provider.baseUrl, provider.apiKey)
+  } else {
+    throw new Error(`Unsupported provider type: ${provider.type}`)
+  }
+}
 
 // 状态映射函数
 const statusMap = {
@@ -15,8 +193,52 @@ const statusMap = {
 
 const getStatusText = (status: string) => statusMap[status as keyof typeof statusMap] || status
 
+// 翻译函数：将英文文本翻译为中文
+async function translateToChinese(text: string): Promise<string> {
+  if (!text.trim()) {
+    console.log('[Translation] Text is empty, skipping')
+    return text
+  }
+  
+  // 检查是否包含足够的中文，而不是要求完全中文
+  const chineseCharCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+  const totalCharCount = text.length;
+  const chineseRatio = totalCharCount > 0 ? chineseCharCount / totalCharCount : 0;
+  
+  console.log(`[Translation] Text analysis - Total chars: ${totalCharCount}, Chinese chars: ${chineseCharCount}, Chinese ratio: ${(chineseRatio * 100).toFixed(2)}%`)
+  
+  // 如果中文占比超过20%，认为已经是中文，直接返回
+  if (chineseRatio > 0.2) {
+    console.log('[Translation] Text is already Chinese (ratio > 20%), skipping translation')
+    return text
+  }
+  
+  console.log('[Translation] Text appears to be English, attempting translation...')
+  console.log('[Translation] Text to translate (first 200 chars):', text.substring(0, 200) + '...')
+  
+  // 尝试使用浏览器内置的翻译API（如果可用）
+  try {
+    // 检查是否有翻译API
+    if (typeof window !== 'undefined' && 'translation' in window.navigator) {
+      console.log('[Translation] Using browser translation API')
+      // @ts-ignore - browser translation API
+      const result = await (window.navigator as any).translation.translate(text, 'zh-CN')
+      console.log('[Translation] Browser translation result:', result)
+      return result
+    }
+  } catch (error) {
+    console.log('[Translation] Browser translation API not available or failed:', error)
+  }
+  
+  // 如果浏览器翻译不可用，返回原文并记录警告
+  console.warn('[Translation] No translation service available, returning original text')
+  console.warn('[Translation] Please improve system prompt to ensure AI returns Chinese directly')
+  
+  return text
+}
+
 // 默认提示词
-const DEFAULT_SYSTEM_PROMPT = `你是一位拥有 10 年以上经验的互联网资深项目经理，国内互联网大厂的项目总监。你擅长用中文进行犀利的项目诊断。你擅长从碎片化的任务信息中洞察潜在风险、评估进度健康度，并提供改进策略。 你的母语是**简体中文**。
+const DEFAULT_SYSTEM_PROMPT = `你是一位拥有 10 年以上经验的互联网资深项目经理，国内互联网大厂的项目总监。你擅长用中文进行犀利的项目诊断。你擅长从碎片化的任务信息中洞察潜在风险、评估进度健康度，并提供改进策略。 你的母语是**简体中文**。 
  指令： 
  我将为你提供一个或多个项目的详细介绍、任务排期、当前进度及已记录的风险点。请你基于这些数据进行深度审计，并输出一份《项目健康度分析报告》。 
  
@@ -28,14 +250,35 @@ const DEFAULT_SYSTEM_PROMPT = `你是一位拥有 10 年以上经验的互联网
  🚫 禁令 (Must Follow)
 1. **禁止输出英文**：除 ID (如 task-1) 和专有名词 (如 API) 外，全篇必须使用**纯简体中文**。: 
  
- 【核心风险预警】 
- 【其他分析】给出你的综合意见和其他分析建议，指出我可能忽略的地方 
- 【行动建议】(针对现有问题，给出具体的破局方案，如：调整优先级等) 
- 【综合意见】
- 
- 以下是项目详细数据：`
+  【核心风险预警】 
+  【其他分析】给出你的综合意见和其他分析建议，指出我可能忽略的地方 
+  【行动建议】(针对现有问题，给出具体的破局方案，如：调整优先级等) 
+  【综合评估以及建议】输出你的综合分析结论以及指出我需要注意的地方，同时如果有待办也需要输出，例如今天开始联调哪些内容等待办内容。 
+  以下是项目详细数据：`
 
-async function callAIAPI(userPrompt: string, systemPrompt: string): Promise<string> {
+async function callAIAPI(userPrompt: string, systemPrompt: string, provider: AIProvider): Promise<string> {
+  try {
+    console.log('[AI API] =========================================')
+    console.log('[AI API] Starting AI API call')
+    console.log('[AI API] Provider:', provider.name, 'Type:', provider.type)
+    console.log('[AI API] User prompt length:', userPrompt.length, 'chars')
+    console.log('[AI API] System prompt length:', systemPrompt.length, 'chars')
+
+    if (provider.type === 'gemini') {
+      return await callGeminiAPI(userPrompt, systemPrompt, provider)
+    } else if (provider.type === 'openai') {
+      return await callOpenAIAPI(userPrompt, systemPrompt, provider)
+    } else {
+      throw new Error(`Unsupported provider type: ${provider.type}`)
+    }
+  } catch (error) {
+    console.error('[AI API] Error:', error)
+    throw error
+  }
+}
+
+// 调用 Gemini API
+async function callGeminiAPI(userPrompt: string, systemPrompt: string, provider: AIProvider): Promise<string> {
   try {
     // 使用 Gemini 模型的 generateContent 接口
     const requestBody = {
@@ -56,24 +299,22 @@ async function callAIAPI(userPrompt: string, systemPrompt: string): Promise<stri
       }
     }
 
-    console.log('AI API Request:', {
-      url: `${AI_API_BASE_URL}/v1beta/models/[福利]gemini-3-flash-preview-maxthinking:generateContent`,
-      body: requestBody
-    })
+    console.log('[Gemini] Request URL:', `${provider.baseUrl}/v1beta/models/${provider.model}:generateContent`)
+    console.log('[Gemini] Request body:', JSON.stringify(requestBody).substring(0, 500) + '...')
 
-    const response = await fetch(`${AI_API_BASE_URL}/v1beta/models/[福利]gemini-3-flash-preview-maxthinking:generateContent`, {
+    const response = await fetch(`${provider.baseUrl}/v1beta/models/${provider.model}:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${AI_API_KEY}`
+        'Authorization': `Bearer ${provider.apiKey}`
       },
       body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('API Error Response:', errorText)
-      throw new Error(`API request failed: ${response.status} - ${errorText}`)
+      console.error('Gemini API Error Response:', errorText)
+      throw new Error(`Gemini API request failed: ${response.status} - ${errorText}`)
     }
 
     // 检查是否为流式响应
@@ -214,7 +455,7 @@ async function callAIAPI(userPrompt: string, systemPrompt: string): Promise<stri
       // 处理非流式响应
       console.log('Handling non-streaming response...')
       data = await response.json()
-      console.log('AI API Raw Response:', data)
+      console.log('Gemini API Raw Response:', data)
     }
 
     let resultText = ''
@@ -226,9 +467,11 @@ async function callAIAPI(userPrompt: string, systemPrompt: string): Promise<stri
       const reasoningContent = choice.delta?.reasoning_content || choice.message?.reasoning_content
       
       if (reasoningContent) {
-        console.log('Found reasoning content (first 100 chars):', reasoningContent.substring(0, 100) + '...')
-        // 直接使用API返回的思考内容，不进行翻译
-        resultText += reasoningContent + '\n\n'
+        console.log('[Gemini] Found reasoning content (first 100 chars):', reasoningContent.substring(0, 100) + '...')
+        // 翻译思考过程
+        const translatedReasoning = await translateToChinese(reasoningContent)
+        console.log('[Gemini] Translated reasoning content (first 100 chars):', translatedReasoning.substring(0, 100) + '...')
+        resultText += translatedReasoning + '\n\n'
       }
     }
     
@@ -263,17 +506,112 @@ async function callAIAPI(userPrompt: string, systemPrompt: string): Promise<stri
       }
     }
     
-    // 3. 直接使用主要内容，不进行翻译
+    // 3. 翻译主要内容（如果是英文）
     if (mainContent) {
-      console.log('Found main content (first 100 chars):', mainContent.substring(0, 100) + '...')
-      // 直接使用API返回的主要内容，不进行翻译
-      resultText += mainContent
+      console.log('Original main content (first 100 chars):', mainContent.substring(0, 100) + '...')
+      
+      // 翻译主要内容
+      const translatedContent = await translateToChinese(mainContent)
+      console.log('Translated main content (first 100 chars):', translatedContent.substring(0, 100) + '...')
+      
+      // 将翻译后的主要内容添加到结果中
+      resultText += translatedContent
     }
 
     console.log('Final AI Response Text:', resultText.substring(0, 100) + '...')
     return resultText
   } catch (error) {
-    console.error('AI API Error:', error)
+    console.error('Gemini API Error:', error)
+    throw error
+  }
+}
+
+// 调用 OpenAI 兼容 API（New API）
+async function callOpenAIAPI(userPrompt: string, systemPrompt: string, provider: AIProvider): Promise<string> {
+  try {
+    // 使用 OpenAI 兼容的 chat completions 接口
+    const requestBody = {
+      model: provider.model,
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user',
+          content: userPrompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000
+    }
+
+    console.log('[OpenAI] Request URL:', `${provider.baseUrl}/v1/chat/completions`)
+    console.log('[OpenAI] Request body:', JSON.stringify(requestBody).substring(0, 500) + '...')
+
+    const response = await fetch(`${provider.baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${provider.apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('OpenAI API Error Response:', errorText)
+      throw new Error(`OpenAI API request failed: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log('[OpenAI] Raw Response:', JSON.stringify(data).substring(0, 500) + '...')
+
+    // 提取响应内容
+    let resultText = ''
+    
+    // 检查是否有 reasoning_content（思考过程）
+    let reasoningContent = ''
+    let mainContent = ''
+    
+    if (data.choices && data.choices[0]) {
+      const choice = data.choices[0]
+      
+      // 优先处理 reasoning_content（思考过程）
+      if (choice.message?.reasoning_content) {
+        reasoningContent = choice.message.reasoning_content
+        console.log('[OpenAI] Found reasoning content (first 100 chars):', reasoningContent.substring(0, 100) + '...')
+      }
+      
+      // 处理主要内容
+      if (choice.message?.content) {
+        mainContent = choice.message.content
+        console.log('[OpenAI] Found main content (first 100 chars):', mainContent.substring(0, 100) + '...')
+      }
+    }
+    
+    if (!reasoningContent && !mainContent) {
+      console.error('[OpenAI] No content in response:', JSON.stringify(data))
+      throw new Error('Empty response received')
+    }
+    
+    // 翻译并组合结果
+    if (reasoningContent) {
+      const translatedReasoning = await translateToChinese(reasoningContent)
+      console.log('[OpenAI] Translated reasoning content (first 100 chars):', translatedReasoning.substring(0, 100) + '...')
+      resultText += translatedReasoning + '\n\n'
+    }
+    
+    if (mainContent) {
+      const translatedMain = await translateToChinese(mainContent)
+      console.log('[OpenAI] Translated main content (first 100 chars):', translatedMain.substring(0, 100) + '...')
+      resultText += translatedMain
+    }
+
+    console.log('[OpenAI] Final AI Response Text:', resultText.substring(0, 100) + '...')
+    return resultText
+  } catch (error) {
+    console.error('OpenAI API Error:', error)
     throw error
   }
 }
@@ -284,6 +622,9 @@ interface AIAnalysisState {
   context: AIAnalysisContext | null
   loading: boolean
   systemPrompt: string
+  providers: AIProvider[]
+  currentProviderId: string
+  promptClickCount: number
   
   openModal: (context: AIAnalysisContext) => void
   closeModal: () => void
@@ -293,6 +634,14 @@ interface AIAnalysisState {
   setSystemPrompt: (prompt: string) => void
   analyzeProjects: (projects: Project[], tasks: Task[], context: AIAnalysisContext) => Promise<void>
   sendFollowUp: (question: string) => Promise<void>
+  
+  // AI 服务提供商管理方法
+  addProvider: (provider: Omit<AIProvider, 'id'>) => void
+  updateProvider: (id: string, updates: Partial<AIProvider>) => void
+  deleteProvider: (id: string) => void
+  setCurrentProvider: (id: string) => void
+  getCurrentProvider: () => AIProvider | undefined
+  incrementPromptClickCount: () => void
 }
 
 const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
@@ -301,6 +650,9 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
   context: null,
   loading: false,
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
+  providers: loadProvidersFromStorage(),
+  currentProviderId: loadCurrentProviderId(),
+  promptClickCount: 0,
 
   openModal: (context) => {
     set({ modalVisible: true, context, messages: [] })
@@ -326,8 +678,12 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
     set({ systemPrompt: prompt })
   },
 
+  incrementPromptClickCount: () => {
+    set((state) => ({ promptClickCount: state.promptClickCount + 1 }))
+  },
+
   analyzeProjects: async (projects, tasks, context) => {
-    const { addMessage, setLoading, systemPrompt } = get()
+    const { addMessage, setLoading, systemPrompt, getCurrentProvider } = get()
     setLoading(true)
 
     try {
@@ -338,10 +694,15 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
         timestamp: new Date().toISOString()
       })
 
+      const provider = getCurrentProvider()
+      if (!provider) {
+        throw new Error('No AI provider selected')
+      }
+
       const analysisData = prepareAnalysisData(projects, tasks, context)
       const userPrompt = analysisData.analysisData
       
-      const analysisResult = await callAIAPI(userPrompt, systemPrompt)
+      const analysisResult = await callAIAPI(userPrompt, systemPrompt, provider)
       
       addMessage({
         id: `msg-${Date.now()}`,
@@ -362,7 +723,7 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
   },
 
   sendFollowUp: async (question) => {
-    const { addMessage, setLoading, systemPrompt } = get()
+    const { addMessage, setLoading, systemPrompt, getCurrentProvider } = get()
     
     addMessage({
       id: `msg-${Date.now()}`,
@@ -374,7 +735,12 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
     setLoading(true)
 
     try {
-      const response = await callAIAPI(question, systemPrompt)
+      const provider = getCurrentProvider()
+      if (!provider) {
+        throw new Error('No AI provider selected')
+      }
+
+      const response = await callAIAPI(question, systemPrompt, provider)
 
       addMessage({
         id: `msg-${Date.now()}`,
@@ -392,6 +758,61 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
     } finally {
       setLoading(false)
     }
+  },
+
+  // AI 服务提供商管理方法
+  addProvider: (provider) => {
+    set((state) => {
+      const newProvider: AIProvider = {
+        ...provider,
+        id: `provider-${Date.now()}`
+      }
+      const newProviders = [...state.providers, newProvider]
+      saveProvidersToStorage(newProviders)
+      return { providers: newProviders }
+    })
+  },
+
+  updateProvider: (id, updates) => {
+    set((state) => {
+      const newProviders = state.providers.map(p =>
+        p.id === id ? { ...p, ...updates } : p
+      )
+      saveProvidersToStorage(newProviders)
+      return { providers: newProviders }
+    })
+  },
+
+  deleteProvider: (id) => {
+    set((state) => {
+      const newProviders = state.providers.filter(p => p.id !== id)
+      
+      // 如果删除的是当前选中的提供商，切换到第一个可用的提供商
+      let newCurrentProviderId = state.currentProviderId
+      if (state.currentProviderId === id) {
+        newCurrentProviderId = newProviders.length > 0 ? newProviders[0].id : ''
+        saveCurrentProviderId(newCurrentProviderId)
+      }
+      
+      saveProvidersToStorage(newProviders)
+      return { providers: newProviders, currentProviderId: newCurrentProviderId }
+    })
+  },
+
+  setCurrentProvider: (id) => {
+    set((state) => {
+      const provider = state.providers.find(p => p.id === id)
+      if (provider) {
+        saveCurrentProviderId(id)
+        return { currentProviderId: id }
+      }
+      return state
+    })
+  },
+
+  getCurrentProvider: () => {
+    const state = get()
+    return state.providers.find(p => p.id === state.currentProviderId)
   }
 }))
 

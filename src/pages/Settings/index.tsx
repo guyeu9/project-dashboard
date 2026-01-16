@@ -1,36 +1,44 @@
 import { useState } from 'react'
-import { Card, Descriptions, Tag, Table, Switch, App as AntApp, Button, Modal, Form, Input, Space, Popconfirm } from 'antd'
+import { Card, Descriptions, Tag, Table, Switch, App as AntApp, Button, Modal, Form, Input, Space, Popconfirm, Radio, Select } from 'antd'
 import useAuthStore from '../../store/authStore'
 import useStore from '../../store/useStore'
-import useAIAnalysisStore from '../../store/aiStore'
+import useAIAnalysisStore, { AIProvider, AIProviderType, AIModel, fetchProviderModels } from '../../store/aiStore'
 import { PMO, ProductManager } from '../../types'
-
-
 
 function SettingsPage() {
   const { message } = AntApp.useApp()
   const { role } = useAuthStore()
   const { taskTypes, setTaskTypes, pmos, setPMOs, productManagers, setProductManagers, clearAllData } = useStore()
-  const { systemPrompt, setSystemPrompt } = useAIAnalysisStore()
+  const { systemPrompt, setSystemPrompt, providers, currentProviderId, addProvider, updateProvider, deleteProvider, setCurrentProvider, promptClickCount, incrementPromptClickCount } = useAIAnalysisStore()
 
   const isAdmin = role === 'admin'
-  
+
   const [typeModalVisible, setTypeModalVisible] = useState(false)
   const [editingTypeId, setEditingTypeId] = useState<string | null>(null)
   const [typeForm] = Form.useForm()
-  
+
   const [pmoModalVisible, setPmoModalVisible] = useState(false)
   const [editingPmoId, setEditingPmoId] = useState<string | null>(null)
   const [pmoForm] = Form.useForm()
-  
+
   const [productManagerModalVisible, setProductManagerModalVisible] = useState(false)
   const [editingProductManagerId, setEditingProductManagerId] = useState<string | null>(null)
   const [productManagerForm] = Form.useForm()
   const [clearDataModalVisible, setClearDataModalVisible] = useState(false)
-  
+
   // AI 提示词编辑相关状态
   const [aiPromptModalVisible, setAiPromptModalVisible] = useState(false)
   const [aiPromptForm] = Form.useForm()
+  const [showFullPrompt, setShowFullPrompt] = useState(false)
+
+  // AI 服务提供商管理相关状态
+  const [aiProviderModalVisible, setAiProviderModalVisible] = useState(false)
+  const [editingProviderId, setEditingProviderId] = useState<string | null>(null)
+  const [aiProviderForm] = Form.useForm()
+
+  // 模型列表相关状态
+  const [availableModels, setAvailableModels] = useState<AIModel[]>([])
+  const [loadingModels, setLoadingModels] = useState(false)
 
   const handleOpenNewType = () => {
     setEditingTypeId(null)
@@ -177,6 +185,7 @@ function SettingsPage() {
 
   // AI 提示词编辑相关函数
   const handleOpenEditAIPrompt = () => {
+    incrementPromptClickCount()
     aiPromptForm.setFieldsValue({
       prompt: systemPrompt
     })
@@ -193,7 +202,130 @@ function SettingsPage() {
       message.success('AI提示词已更新')
       setAiPromptModalVisible(false)
       aiPromptForm.resetFields()
+      setShowFullPrompt(false)
     })
+  }
+
+  // AI 服务提供商管理相关函数
+  const handleOpenNewProvider = () => {
+    setEditingProviderId(null)
+    aiProviderForm.resetFields()
+    setAvailableModels([])
+    setAiProviderModalVisible(true)
+  }
+
+  const handleOpenEditProvider = (provider: AIProvider) => {
+    setEditingProviderId(provider.id)
+
+    // 对 API Key 进行脱敏处理
+    const maskedApiKey = provider.apiKey.length > 8
+      ? `${provider.apiKey.substring(0, 4)}****${provider.apiKey.substring(provider.apiKey.length - 4)}`
+      : '****'
+
+    aiProviderForm.setFieldsValue({
+      name: provider.name,
+      baseUrl: provider.baseUrl,
+      apiKey: maskedApiKey, // 编辑时显示脱敏的 API Key
+      model: provider.model,
+      type: provider.type,
+      enabled: provider.enabled
+    })
+    setAvailableModels([])
+    setAiProviderModalVisible(true)
+  }
+
+  const handleDeleteProvider = (id: string) => {
+    if (providers.length <= 1) {
+      message.error('至少需要保留一个 AI 服务提供商')
+      return
+    }
+    deleteProvider(id)
+    message.success('AI 服务提供商已删除')
+  }
+
+  const handleSaveProvider = () => {
+    aiProviderForm.validateFields().then(values => {
+      if (!isAdmin) {
+        message.error('当前为游客，仅管理员可以修改AI服务提供商')
+        return
+      }
+      const { name, baseUrl, apiKey, model, type, enabled } = values
+
+      // 判断 API Key 是否被修改
+      let finalApiKey = apiKey
+      if (editingProviderId) {
+        const existingProvider = providers.find(p => p.id === editingProviderId)
+        if (existingProvider) {
+          // 如果输入的 API Key 是脱敏格式（包含 ****），则保留原有的 API Key
+          if (apiKey && apiKey.includes('****')) {
+            finalApiKey = existingProvider.apiKey
+          }
+          // 如果输入的 API Key 为空，也保留原有的 API Key
+          else if (!apiKey) {
+            finalApiKey = existingProvider.apiKey
+          }
+          // 否则使用用户输入的新 API Key
+        }
+      }
+
+      if (editingProviderId) {
+        updateProvider(editingProviderId, { name, baseUrl, apiKey: finalApiKey, model, type, enabled })
+        message.success('AI 服务提供商已更新')
+      } else {
+        addProvider({ name, baseUrl, apiKey: finalApiKey, model, type, enabled })
+        message.success('AI 服务提供商已新增')
+      }
+      setAiProviderModalVisible(false)
+      aiProviderForm.resetFields()
+    })
+  }
+
+  const handleSwitchProvider = (providerId: string) => {
+    setCurrentProvider(providerId)
+    const provider = providers.find(p => p.id === providerId)
+    message.success(`已切换到 ${provider?.name}`)
+  }
+
+  // 获取模型列表
+  const handleFetchModels = async () => {
+    const values = aiProviderForm.getFieldsValue()
+    const { baseUrl, apiKey, type } = values
+
+    if (!baseUrl || !apiKey || !type) {
+      message.error('请先填写 Base URL、API Key 和 API 类型')
+      return
+    }
+
+    // 如果是编辑模式且 API Key 是脱敏格式，则使用原有的完整 API Key
+    let finalApiKey = apiKey
+    if (editingProviderId && apiKey.includes('****')) {
+      const existingProvider = providers.find(p => p.id === editingProviderId)
+      if (existingProvider) {
+        finalApiKey = existingProvider.apiKey
+      }
+    }
+
+    setLoadingModels(true)
+    try {
+      const tempProvider: AIProvider = {
+        id: 'temp',
+        name: 'temp',
+        baseUrl,
+        apiKey: finalApiKey,
+        model: '',
+        type,
+        enabled: true
+      }
+
+      const models = await fetchProviderModels(tempProvider)
+      setAvailableModels(models)
+      message.success(`成功获取 ${models.length} 个模型`)
+    } catch (error) {
+      console.error('Failed to fetch models:', error)
+      message.error('获取模型列表失败，请检查配置信息')
+    } finally {
+      setLoadingModels(false)
+    }
   }
 
   const handleConfirmClearData = () => {
@@ -206,6 +338,126 @@ function SettingsPage() {
       message.error('清空数据失败，请重试')
     }
   }
+
+  const aiProviderColumns = [
+    {
+      title: '当前使用',
+      key: 'current',
+      width: 100,
+      render: (_: any, record: AIProvider) => (
+        <Radio
+          checked={record.id === currentProviderId}
+          onChange={() => handleSwitchProvider(record.id)}
+          disabled={!record.enabled}
+        />
+      )
+    },
+    {
+      title: '名称',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text: string, record: AIProvider) => (
+        <span>
+          {text}
+          {record.id === currentProviderId && (
+            <Tag color="blue" style={{ marginLeft: 8 }}>
+              当前使用
+            </Tag>
+          )}
+        </span>
+      )
+    },
+    {
+      title: '类型',
+      dataIndex: 'type',
+      key: 'type',
+      width: 120,
+      render: (type: AIProviderType) => (
+        <Tag color={type === 'gemini' ? 'purple' : 'green'}>
+          {type === 'gemini' ? 'Gemini' : 'OpenAI'}
+        </Tag>
+      )
+    },
+    {
+      title: 'Base URL',
+      dataIndex: 'baseUrl',
+      key: 'baseUrl',
+      ellipsis: true,
+      render: (url: string) => (
+        <span style={{ fontSize: '12px', color: '#666' }}>{url}</span>
+      )
+    },
+    {
+      title: 'API Key',
+      dataIndex: 'apiKey',
+      key: 'apiKey',
+      ellipsis: true,
+      render: (apiKey: string) => (
+        <span style={{ fontSize: '12px', color: '#666', fontFamily: 'monospace' }}>
+          {apiKey.length > 8 ? `${apiKey.substring(0, 4)}****${apiKey.substring(apiKey.length - 4)}` : '****'}
+        </span>
+      )
+    },
+    {
+      title: '模型',
+      dataIndex: 'model',
+      key: 'model',
+      ellipsis: true,
+      render: (model: string) => (
+        <span style={{ fontSize: '12px', color: '#666' }}>{model}</span>
+      )
+    },
+    {
+      title: '启用',
+      dataIndex: 'enabled',
+      key: 'enabled',
+      width: 80,
+      render: (_: boolean, record: AIProvider) => (
+        <Switch
+          checked={record.enabled}
+          disabled={!isAdmin}
+          onChange={(checked) => {
+            updateProvider(record.id, { enabled: checked })
+            message.success('AI 服务提供商状态已更新')
+          }}
+        />
+      )
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 150,
+      render: (_: any, record: AIProvider) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            onClick={() => handleOpenEditProvider(record)}
+            disabled={!isAdmin}
+          >
+            编辑
+          </Button>
+          <Popconfirm
+            title="确认删除"
+            description="确定要删除这个 AI 服务提供商吗？"
+            onConfirm={() => handleDeleteProvider(record.id)}
+            okText="确定"
+            cancelText="取消"
+            disabled={!isAdmin}
+          >
+            <Button
+              type="link"
+              size="small"
+              danger
+              disabled={!isAdmin}
+            >
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
+      )
+    }
+  ]
 
   const typeColumns = [
     {
@@ -408,9 +660,51 @@ function SettingsPage() {
           </Button>
         }
       >
-        <div style={{ backgroundColor: '#f0f5ff', padding: '16px', borderRadius: '8px', maxHeight: '300px', overflowY: 'auto' }}>
-          <pre style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>{systemPrompt}</pre>
+        {showFullPrompt || promptClickCount >= 3 ? (
+          <div style={{ backgroundColor: '#f0f5ff', padding: '16px', borderRadius: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+            <pre style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>{systemPrompt}</pre>
+          </div>
+        ) : (
+          <div style={{ backgroundColor: '#f0f5ff', padding: '16px', borderRadius: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+            <pre style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>
+              {systemPrompt.length > 100
+                ? `${systemPrompt.substring(0, 50)}...${' *'.repeat(Math.min(20, systemPrompt.length - 50))}`
+                : systemPrompt}
+            </pre>
+            <div style={{ marginTop: 12, textAlign: 'center' }}>
+              <Button
+                type="link"
+                size="small"
+                onClick={() => setShowFullPrompt(true)}
+                disabled={!isAdmin}
+              >
+                查看完整提示词
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* AI 服务提供商管理卡片 */}
+      <Card
+        title="AI 服务提供商管理"
+        style={{ marginTop: 24 }}
+        extra={
+          <Button type="primary" disabled={!isAdmin} onClick={handleOpenNewProvider}>
+            新增 AI 服务
+          </Button>
+        }
+      >
+        <div style={{ marginBottom: 16, color: '#666', fontSize: '14px' }}>
+          配置和管理 AI 服务提供商，点击单选按钮切换当前使用的 AI 服务。
         </div>
+        <Table
+          dataSource={providers}
+          columns={aiProviderColumns}
+          rowKey="id"
+          pagination={false}
+          size="small"
+        />
       </Card>
 
       <Card
@@ -474,6 +768,7 @@ function SettingsPage() {
         onCancel={() => {
           setAiPromptModalVisible(false)
           aiPromptForm.resetFields()
+          setShowFullPrompt(false)
         }}
         okText="保存"
         cancelText="取消"
@@ -495,6 +790,139 @@ function SettingsPage() {
               disabled={!isAdmin}
               style={{ fontSize: '14px', fontFamily: 'monospace' }}
             />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 查看完整提示词的模态框 */}
+      <Modal
+        title="查看完整提示词"
+        open={showFullPrompt}
+        onCancel={() => setShowFullPrompt(false)}
+        footer={[
+          <Button key="close" onClick={() => setShowFullPrompt(false)}>
+            关闭
+          </Button>
+        ]}
+        width={800}
+      >
+        <div style={{ backgroundColor: '#f0f5ff', padding: '16px', borderRadius: '8px', maxHeight: '400px', overflowY: 'auto' }}>
+          <pre style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>{systemPrompt}</pre>
+        </div>
+      </Modal>
+
+      {/* AI 服务提供商编辑/新增模态框 */}
+      <Modal
+        title={editingProviderId ? '编辑 AI 服务提供商' : '新增 AI 服务提供商'}
+        open={aiProviderModalVisible}
+        onOk={handleSaveProvider}
+        onCancel={() => {
+          setAiProviderModalVisible(false)
+          aiProviderForm.resetFields()
+        }}
+        okText="保存"
+        cancelText="取消"
+        okButtonProps={{ disabled: !isAdmin }}
+        width={600}
+      >
+        <Form
+          form={aiProviderForm}
+          layout="vertical"
+          initialValues={{
+            type: 'openai',
+            enabled: true
+          }}
+        >
+          <Form.Item
+            label="名称"
+            name="name"
+            rules={[{ required: true, message: '请输入AI服务名称' }]}
+          >
+            <Input placeholder="例如：New API" disabled={!isAdmin} />
+          </Form.Item>
+          <Form.Item
+            label="API 类型"
+            name="type"
+            rules={[{ required: true, message: '请选择API类型' }]}
+          >
+            <Select disabled={!isAdmin}>
+              <Select.Option value="openai">OpenAI 兼容</Select.Option>
+              <Select.Option value="gemini">Gemini</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="Base URL"
+            name="baseUrl"
+            rules={[{ required: true, message: '请输入Base URL' }]}
+          >
+            <Input placeholder="例如：https://api.zscc.in" disabled={!isAdmin} />
+          </Form.Item>
+          <Form.Item
+            label="API Key"
+            name="apiKey"
+            rules={[{ required: true, message: '请输入API Key' }]}
+            extra={editingProviderId ? "编辑时显示脱敏版本，直接修改即可更新" : ""}
+          >
+            <Input.Password
+              placeholder="请输入API Key"
+              disabled={!isAdmin}
+            />
+          </Form.Item>
+          <Form.Item label="模型名称" required>
+            <Space.Compact>
+              <Form.Item
+                name="model"
+                noStyle
+                rules={[{ required: true, message: '请选择或输入模型名称' }]}
+              >
+                <Select
+                  showSearch
+                  placeholder="请选择模型"
+                  style={{ width: availableModels.length > 0 ? 'calc(100% - 120px)' : '100%' }}
+                  disabled={!isAdmin}
+                  options={availableModels.map(model => ({
+                    label: model.name,
+                    value: model.id
+                  }))}
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                />
+              </Form.Item>
+              {availableModels.length > 0 && (
+                <Button
+                  type="default"
+                  onClick={() => setAvailableModels([])}
+                  disabled={!isAdmin}
+                  style={{ width: '120px' }}
+                >
+                  清空列表
+                </Button>
+              )}
+            </Space.Compact>
+            <div style={{ marginTop: 8 }}>
+              <Button
+                type="link"
+                size="small"
+                onClick={handleFetchModels}
+                disabled={!isAdmin || loadingModels}
+                loading={loadingModels}
+              >
+                {loadingModels ? '获取中...' : '从服务端获取模型列表'}
+              </Button>
+              {availableModels.length > 0 && (
+                <span style={{ marginLeft: 8, color: '#666', fontSize: '12px' }}>
+                  已获取 {availableModels.length} 个模型
+                </span>
+              )}
+            </div>
+          </Form.Item>
+          <Form.Item
+            label="启用"
+            name="enabled"
+            valuePropName="checked"
+          >
+            <Switch disabled={!isAdmin} />
           </Form.Item>
         </Form>
       </Modal>
@@ -592,7 +1020,7 @@ function SettingsPage() {
       {/* 数据管理卡片 - 仅管理员可见 */}
       {isAdmin && (
         <Card
-          title="数据管理" 
+          title="数据管理"
           style={{ marginTop: 24 }}
           extra={
             <span style={{ color: '#ff4d4f', fontSize: '14px', fontWeight: 'bold' }}>⚠️ 危险操作</span>
@@ -604,8 +1032,8 @@ function SettingsPage() {
               此操作将清空系统中的所有项目、任务、PMO、产品经理和历史记录，仅保留默认任务类型。
               请谨慎操作，建议先导出备份数据。
             </p>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               danger
               size="large"
               onClick={() => setClearDataModalVisible(true)}

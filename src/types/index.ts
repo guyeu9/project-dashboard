@@ -135,3 +135,24 @@ export interface AIAnalysisContext {
   projectId?: string
   projectName?: string
 }
+
+// 智能解析相关类型
+export interface SmartParseResult {
+  projectName: string
+  projectRemark?: string
+  personnel: PersonnelInfo
+  schedules: ScheduleItem[]
+}
+
+export interface ScheduleItem {
+  name: string
+  startDate: string
+  endDate: string
+  duration: number
+}
+
+export interface PersonnelInfo {
+  owner?: string
+  developers: string[]
+  testers: string[]
+}

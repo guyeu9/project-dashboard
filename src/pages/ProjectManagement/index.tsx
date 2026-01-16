@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Card, Row, Col, Tag, Button, Space, Select, DatePicker, Input, Empty, Radio, Progress, Spin, App as AntApp, Popconfirm } from 'antd'
+import { Card, Row, Col, Tag, Button, Space, Select, DatePicker, Input, Empty, Radio, Progress, Spin, App as AntApp, Popconfirm, Modal, Form } from 'antd'
 import {
   SearchOutlined,
   AppstoreOutlined,
@@ -15,15 +15,17 @@ import useAIAnalysisStore from '../../store/aiStore'
 import useAuthStore from '../../store/authStore'
 import ProjectEditModal from '../../components/ProjectEditModal'
 import AIAnalysisModal from '../../components/AIAnalysisModal'
-import { Project } from '../../types'
+import { Project, SmartParseResult } from '../../types'
+import { parseSmartProjectInfo } from '../../utils/smartParser'
 import './index.css'
 import { useNavigate } from 'react-router-dom'
+
 
 const { Option } = Select
 const { RangePicker } = DatePicker
 
 function ProjectManagement() {
-  const { projects, addProject, updateProject, deleteProject } = useStore()
+  const { projects, addProject, updateProject, deleteProject, importPersonnel, createTasksFromSchedule } = useStore()
   const { openModal } = useAIAnalysisStore()
   const { role } = useAuthStore()
   const { message } = AntApp.useApp()
@@ -39,6 +41,13 @@ function ProjectManagement() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+  
+  // 智能解析相关状态
+  const [smartParserModalVisible, setSmartParserModalVisible] = useState(false)
+  const [smartParserText, setSmartParserText] = useState('')
+  const [smartParseResult, setSmartParseResult] = useState<SmartParseResult | null>(null)
+  const [importingPersonnel, setImportingPersonnel] = useState(false)
+  const [importingTasks, setImportingTasks] = useState(false)
 
   const handleAIAnalysis = (project: Project) => {
     openModal({ scope: 'single', projectId: project.id, projectName: project.name })
@@ -136,6 +145,76 @@ function ProjectManagement() {
     updateProject(projectId, updates)
     setEditModalVisible(false)
     setEditingProject(null)
+  }
+  
+  // 智能解析相关方法
+  const handleOpenSmartParser = () => {
+    setSmartParserModalVisible(true)
+    setSmartParserText('')
+    setSmartParseResult(null)
+  }
+
+  const handleSmartParserTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setSmartParserText(e.target.value)
+  }
+
+  const handleParseSmartProject = () => {
+    if (!smartParserText.trim()) {
+      message.warning('请输入项目信息')
+      return
+    }
+
+    const result = parseSmartProjectInfo(smartParserText)
+    if (!result) {
+      message.error('解析失败，请检查格式')
+      return
+    }
+
+    setSmartParseResult(result)
+  }
+
+  const handleConfirmSmartParse = () => {
+    if (!smartParseResult || !isAdmin) {
+      return
+    }
+
+    setImportingPersonnel(true)
+    try {
+      importPersonnel(smartParseResult)
+      
+      const newProject = {
+        id: `project-${Date.now()}`,
+        name: smartParseResult.projectName,
+        status: 'pending' as const,
+        progress: 0,
+        startDate: dayjs().format('YYYY-MM-DD'),
+        endDate: dayjs().format('YYYY-MM-DD'),
+        owner: smartParseResult.personnel.owner || '',
+        developers: smartParseResult.personnel.developers || [],
+        testers: smartParseResult.personnel.testers || [],
+        partners: [],
+        remark: smartParseResult.projectRemark || ''
+      }
+      addProject(newProject)
+
+      setTimeout(async () => {
+        setImportingTasks(true)
+        try {
+          createTasksFromSchedule(newProject.id, smartParseResult.schedules)
+          message.success(`成功导入项目 ${smartParseResult.projectName}`)
+          setSmartParserModalVisible(false)
+          setSmartParserText('')
+          setSmartParseResult(null)
+        } catch (error) {
+          message.error('创建任务失败')
+        } finally {
+          setImportingTasks(false)
+        }
+      }, 500)
+    } catch (error) {
+      message.error('导入失败')
+      setImportingPersonnel(false)
+    }
   }
 
   const handleProjectAdd = (project: Project) => {
@@ -434,9 +513,14 @@ function ProjectManagement() {
       <Card 
         title="项目进度" 
         extra={
-          <Button type="primary" onClick={handleAddProject} disabled={!isAdmin}>
-            新建项目
-          </Button>
+          <Space>
+            <Button type="primary" onClick={handleAddProject} disabled={!isAdmin}>
+              新建项目
+            </Button>
+            <Button type="default" onClick={handleOpenSmartParser} disabled={!isAdmin}>
+              智能解析
+            </Button>
+          </Space>
         }
         style={{ 
           borderRadius: '12px',
@@ -552,7 +636,100 @@ function ProjectManagement() {
         onAdd={handleProjectAdd}
         onCancel={handleProjectCancel}
       />
+      
+      <Modal
+        title="智能解析"
+        open={smartParserModalVisible}
+        onCancel={() => setSmartParserModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setSmartParserModalVisible(false)}>
+            取消
+          </Button>,
+          <Button key="parse" type="primary" onClick={handleParseSmartProject} loading={importingPersonnel}>
+            解析
+          </Button>,
+          smartParseResult && (
+            <Button key="import" type="primary" onClick={handleConfirmSmartParse} loading={importingTasks} style={{ marginLeft: 8 }}>
+              导入
+            </Button>
+          )
+        ]}
+        width={800}
+      >
+        <Form layout="vertical">
+          <Form.Item label="项目信息">
+            <Input.TextArea
+              rows={15}
+              placeholder="请输入项目信息，例如：
 
+项目名称：支付通道最小扣款金额需求
+归属项目：业务交付中心
+人员信息：
+负责人：晋秋婉
+开发人员：@罗富星-业务交付中心, @郎文龙-业务交付中心
+测试人员：@郭华佳
+创建人：@祝攀攀
+整体排期信息：
+开发设计：2025.12.25-2026.01.07 (28.0小时)
+开发：2025.12.29-2026.01.16 (121.0小时)
+开发自测：2026.01.14-2026.01.14 (1.0小时)
+测试设计：2026.01.05-2026.01.07 (10.0小时)
+测试：2026.01.12-2026.01.19 (28.0小时)
+UAT测试：2026.02.03-2026.02.04 (4.0小时)
+准生产测试：2026.02.05-2026.02.05 (4.0小时)
+三方联调(合作方)：2026.01.14-2026.02.03 (34.0小时)
+上线：2026.02.18
+暂定1.18上线"
+              value={smartParserText}
+              onChange={handleSmartParserTextChange}
+              disabled={importingPersonnel || importingTasks}
+            />
+          </Form.Item>
+          {smartParseResult && (
+            <div style={{ marginTop: 16, padding: 16, backgroundColor: '#f5f5f5', borderRadius: 8 }}>
+              <h4 style={{ marginBottom: 12 }}>解析结果</h4>
+              <div style={{ marginBottom: 8 }}>
+                <strong>项目名称：</strong>
+                <span style={{ marginLeft: 8 }}>{smartParseResult.projectName}</span>
+              </div>
+              {smartParseResult.projectRemark && (
+                <div style={{ marginBottom: 8 }}>
+                  <strong>项目备注：</strong>
+                  <span style={{ marginLeft: 8 }}>{smartParseResult.projectRemark}</span>
+                </div>
+              )}
+              <div style={{ marginBottom: 8 }}>
+                <strong>人员信息：</strong>
+                {smartParseResult.personnel.owner && (
+                  <div style={{ marginLeft: 8 }}>
+                    <span>负责人：{smartParseResult.personnel.owner}</span>
+                  </div>
+                )}
+                {smartParseResult.personnel.developers && smartParseResult.personnel.developers.length > 0 && (
+                  <div style={{ marginLeft: 8 }}>
+                    <span>开发人员：{smartParseResult.personnel.developers.join(', ')}</span>
+                  </div>
+                )}
+                {smartParseResult.personnel.testers && smartParseResult.personnel.testers.length > 0 && (
+                  <div style={{ marginLeft: 8 }}>
+                    <span>测试人员：{smartParseResult.personnel.testers.join(', ')}</span>
+                  </div>
+                )}
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <strong>排期信息：</strong>
+                <ul style={{ marginLeft: 8, marginTop: 4 }}>
+                  {smartParseResult.schedules.map((schedule: any, index: number) => (
+                    <li key={index}>
+                      {schedule.name}：{schedule.startDate} - {schedule.endDate} ({schedule.duration}小时)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </Form>
+      </Modal>
       <AIAnalysisModal />
     </div>
   )

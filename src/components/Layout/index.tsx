@@ -30,6 +30,16 @@ interface LoginFormProps {
 }
 
 function LoginForm({ role, onQuickAdmin }: LoginFormProps) {
+  // 只有在非管理员身份时才需要表单
+  if (role === 'admin') {
+    return (
+      <div>
+        <p>当前已以 <strong>管理员</strong> 身份登录。</p>
+        <p>可以在「设置中心」和各页面修改项目与任务数据。</p>
+      </div>
+    )
+  }
+
   const [form] = Form.useForm()
 
   return (
@@ -38,35 +48,25 @@ function LoginForm({ role, onQuickAdmin }: LoginFormProps) {
       layout="vertical"
       initialValues={{ username: 'admin', password: 'admin' }}
     >
-      {role !== 'admin' && (
-        <>
-          <Form.Item
-            label="账号"
-            name="username"
-            rules={[{ required: true, message: '请输入账号' }]}
-          >
-            <Input placeholder="请输入账号，默认为 admin" />
-          </Form.Item>
-          <Form.Item
-            label="密码"
-            name="password"
-            rules={[{ required: true, message: '请输入密码' }]}
-          >
-            <Input.Password placeholder="请输入密码，默认为 admin" />
-          </Form.Item>
-          <Space style={{ marginTop: 8 }}>
-            <Button type="link" onClick={onQuickAdmin}>
-              管理员一键登录
-            </Button>
-          </Space>
-        </>
-      )}
-      {role === 'admin' && (
-        <div>
-          <p>当前已以 <strong>管理员</strong> 身份登录。</p>
-          <p>可以在「设置中心」和各页面修改项目与任务数据。</p>
-        </div>
-      )}
+      <Form.Item
+        label="账号"
+        name="username"
+        rules={[{ required: true, message: '请输入账号' }]}
+      >
+        <Input placeholder="请输入账号，默认为 admin" />
+      </Form.Item>
+      <Form.Item
+        label="密码"
+        name="password"
+        rules={[{ required: true, message: '请输入密码' }]}
+      >
+        <Input.Password placeholder="请输入密码，默认为 admin" />
+      </Form.Item>
+      <Space style={{ marginTop: 8 }}>
+        <Button type="link" onClick={onQuickAdmin}>
+          管理员一键登录
+        </Button>
+      </Space>
     </Form>
   )
 }

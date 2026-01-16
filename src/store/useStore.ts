@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Project, Task, TaskType, HistoryRecord, PMO, ProductManager } from '../types'
+import { Project, Task, TaskType, HistoryRecord, PMO, ProductManager, SmartParseResult, ScheduleItem } from '../types'
 import { mockProjects, mockPMOs, mockProductManagers } from './mockData'
 import useAIAnalysisStore from './aiStore'
 
@@ -113,6 +113,10 @@ interface AppState {
   stopSyncInterval: () => void
   manualSync: () => Promise<void>
   analyzeProjects: (projects: Project[], tasks: Task[], context: any) => Promise<void>
+  
+  // 智能解析相关方法
+  importPersonnel: (result: SmartParseResult) => void
+  createTasksFromSchedule: (projectId: string, schedules: ScheduleItem[]) => void
 }
 
 const API_BASE_URL =
@@ -551,6 +555,66 @@ const useStore = create<AppState>((set, get) => {
     analyzeProjects: async (projects, tasks, context) => {
       const aiStore = useAIAnalysisStore.getState()
       await aiStore.analyzeProjects(projects, tasks, context)
+    },
+    
+    // 智能解析相关方法
+    importPersonnel: (result: SmartParseResult) => {
+      const state = get()
+      const allPersonnel = [...state.pmos, ...state.productManagers]
+      
+      if (result.personnel.owner) {
+        const ownerExists = allPersonnel.some(p => p.name === result.personnel.owner)
+        if (!ownerExists) {
+          const newPMO = { id: `pmo-${Date.now()}`, name: result.personnel.owner, enabled: true }
+          state.setPMOs([...state.pmos, newPMO])
+        }
+      }
+      
+      if (result.personnel.developers && result.personnel.developers.length > 0) {
+        for (const dev of result.personnel.developers) {
+          const devExists = allPersonnel.some(p => p.name === dev)
+          if (!devExists) {
+            const newPM = { id: `pm-${Date.now()}`, name: dev, enabled: true }
+            state.setProductManagers([...state.productManagers, newPM])
+          }
+        }
+      }
+      
+      if (result.personnel.testers && result.personnel.testers.length > 0) {
+        for (const tester of result.personnel.testers) {
+          const testerExists = allPersonnel.some(p => p.name === tester)
+          if (!testerExists) {
+            const newPM = { id: `pm-${Date.now()}`, name: tester, enabled: true }
+            state.setProductManagers([...state.productManagers, newPM])
+          }
+        }
+      }
+    },
+    
+    createTasksFromSchedule: (projectId: string, schedules: ScheduleItem[]) => {
+      const state = get()
+      const devType = state.taskTypes.find(t => t.name === '开发排期')
+      const testType = state.taskTypes.find(t => t.name === '测试排期')
+      
+      for (const schedule of schedules) {
+        const taskType = schedule.name.includes('测试') ? testType : devType
+        
+        if (taskType) {
+          const newTask = {
+            id: `task-${Date.now()}`,
+            projectId,
+            name: schedule.name,
+            type: taskType,
+            status: 'normal' as const,
+            progress: 0,
+            startDate: schedule.startDate,
+            endDate: schedule.endDate,
+            assignees: [],
+            dailyRecords: []
+          }
+          state.addTask(newTask)
+        }
+      }
     }
   }
 })
