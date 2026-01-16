@@ -194,28 +194,33 @@ function MasterGantt({ projects }: MasterGanttProps) {
   const getProjectBarStyle = (project: Project, status?: Project['status']) => {
     const finalStatus = status || project.status
     
+    let backgroundColor = 'var(--success-color)' // 正常 - 绿色
     let borderColor = 'var(--success-color)'
-    let textColor = '#000000'
+    let textColor = '#ffffff'
 
     if (finalStatus === 'risk') {
+      backgroundColor = 'var(--warning-color)' // 风险 - 黄色
       borderColor = 'var(--warning-color)'
-      textColor = '#000000'
+      textColor = '#ffffff'
     } else if (finalStatus === 'delayed') {
+      backgroundColor = 'var(--error-color)' // 延期 - 红色
       borderColor = 'var(--error-color)'
-      textColor = '#000000'
+      textColor = '#ffffff'
     } else if (finalStatus === 'completed') {
+      backgroundColor = '#595959' // 已完成 - 灰色
       borderColor = '#595959'
-      textColor = '#000000'
+      textColor = '#ffffff'
     } else if (finalStatus === 'pending') {
+      backgroundColor = 'var(--pending-color)' // 待开始 - 紫色
       borderColor = 'var(--pending-color)'
-      textColor = '#000000'
+      textColor = '#ffffff'
     }
 
     return {
-      backgroundColor: '#E6F4FF',
-      border: `2px solid ${borderColor}`,
+      backgroundColor,
+      border: `1px solid ${borderColor}`,
       color: textColor,
-      borderRadius: '8px',
+      borderRadius: '0px',
       height: 32,
       cursor: 'pointer',
       transition: 'all 0.3s',
@@ -651,6 +656,19 @@ function MasterGantt({ projects }: MasterGanttProps) {
                         )
                       })}
                     </div>
+                    
+                    {/* 项目进度条背景 */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: '0',
+                        width: `${days.length * 60}px`,
+                        top: '0',
+                        height: '100%',
+                        backgroundColor: '#E6F4FF',
+                        zIndex: 1,
+                      }}
+                    />
                     
                     <Tooltip 
                       title={
