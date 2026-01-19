@@ -157,7 +157,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET') {
       const data = readJsonData()
       if (!data) {
-        sendJson(res, 404, { error: 'NOT_FOUND', message: '数据文件不存在' })
+        sendJson(res, 200, { projects: [], tasks: [], taskTypes: [], pmos: [], productManagers: [], historyRecords: [] })
         return
       }
       sendJson(res, 200, data)

@@ -168,6 +168,20 @@ const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[]; t
   }
 }
 
+const isFirstRun = async (): Promise<boolean> => {
+  try {
+    const res = await fetch(API_URL, { method: 'GET' })
+    if (!res.ok) {
+      return true
+    }
+    const data = await res.json()
+    return !data || !data.projects || !data.tasks
+  } catch (error) {
+    console.error('检查是否首次运行失败:', error)
+    return true
+  }
+}
+
 const saveToServer = async (data: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[]; pmos: PMO[]; productManagers: ProductManager[]; historyRecords: HistoryRecord[] }) => {
   try {
     await fetch(API_URL, {
@@ -237,7 +251,11 @@ const useStore = create<AppState>((set, get) => {
     if (serverData) {
       applyAndPersist(serverData)
     } else {
-      saveToServer(defaultData)
+      isFirstRun().then((firstRun) => {
+        if (firstRun) {
+          saveToServer(defaultData)
+        }
+      })
     }
     startSyncInterval()
   })
@@ -495,7 +513,20 @@ const useStore = create<AppState>((set, get) => {
         if (serverData) {
           applyAndPersist(serverData)
         } else {
-          applyAndPersist(defaultData)
+          isFirstRun().then((firstRun) => {
+            if (firstRun) {
+              applyAndPersist(defaultData)
+            } else {
+              applyAndPersist({
+                projects: [],
+                tasks: [],
+                taskTypes: defaultData.taskTypes,
+                pmos: [],
+                productManagers: [],
+                historyRecords: []
+              })
+            }
+          })
         }
       })
     },
