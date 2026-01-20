@@ -74,13 +74,23 @@ const acquireLock = () => {
     if (fs.existsSync(lockFile)) {
       const lockTime = parseInt(fs.readFileSync(lockFile, 'utf-8'))
       const now = Date.now()
-      if (now - lockTime < 30000) {
+      const age = now - lockTime
+      if (age < 30000) {
+        console.log('[INFO] 锁文件存在且未过期，等待中... 剩余时间:', 30000 - age, 'ms')
         return false
+      }
+      console.log('[INFO] 锁文件已过期（', age, 'ms），删除并重新获取')
+      try {
+        fs.unlinkSync(lockFile)
+      } catch (unlinkError) {
+        console.error('[ERROR] 删除过期锁文件失败:', unlinkError.message)
       }
     }
     fs.writeFileSync(lockFile, Date.now().toString(), 'utf-8')
+    console.log('[INFO] 成功获取锁')
     return true
-  } catch {
+  } catch (error) {
+    console.error('[ERROR] 获取锁失败:', error.message)
     return false
   }
 }
@@ -89,8 +99,10 @@ const releaseLock = () => {
   try {
     if (fs.existsSync(lockFile)) {
       fs.unlinkSync(lockFile)
+      console.log('[INFO] 成功释放锁')
     }
-  } catch {
+  } catch (error) {
+    console.error('[ERROR] 释放锁失败:', error.message)
   }
 }
 
@@ -193,27 +205,50 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST') {
       const raw = await getRequestBody(req)
+      console.log('[INFO] POST /api/data 收到请求，原始数据长度:', raw.length)
+      
       try {
         const parsed = raw ? JSON.parse(raw) : {}
+        console.log('[INFO] POST /api/data 解析后的数据结构:', {
+          projectsCount: Array.isArray(parsed.projects) ? parsed.projects.length : 'N/A',
+          tasksCount: Array.isArray(parsed.tasks) ? parsed.tasks.length : 'N/A',
+          taskTypesCount: Array.isArray(parsed.taskTypes) ? parsed.taskTypes.length : 'N/A',
+          hasData: !!parsed
+        })
         
         let retries = 0
         let ok = false
+        let lastError = null
         
         while (retries < MAX_RETRIES && !ok) {
           if (acquireLock()) {
-            ok = writeJsonData(parsed)
-            releaseLock()
+            try {
+              ok = writeJsonData(parsed)
+              if (ok) {
+                console.log('[INFO] POST /api/data 数据保存成功')
+              } else {
+                console.error('[ERROR] POST /api/data writeJsonData 返回 false')
+                lastError = 'WRITE_OPERATION_FAILED'
+              }
+            } catch (writeError) {
+              console.error('[ERROR] POST /api/data writeJsonData 抛出异常:', writeError.message)
+              lastError = writeError.message
+            } finally {
+              releaseLock()
+            }
             
             if (ok) {
               sendJson(res, 200, { ok: true, message: '数据保存成功' })
             } else {
               retries++
+              console.log('[INFO] POST /api/data 保存失败，重试:', retries, '/', MAX_RETRIES)
               if (retries < MAX_RETRIES) {
                 await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
               }
             }
           } else {
             retries++
+            console.log('[INFO] POST /api/data 获取锁失败，重试:', retries, '/', MAX_RETRIES)
             if (retries < MAX_RETRIES) {
               await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
             }
@@ -221,10 +256,12 @@ const server = http.createServer(async (req, res) => {
         }
         
         if (!ok) {
-          sendJson(res, 500, { error: 'WRITE_FAILED', message: '数据保存失败，请稍后重试' })
+          console.error('[ERROR] POST /api/data 数据保存最终失败，错误:', lastError)
+          sendJson(res, 500, { error: 'WRITE_FAILED', message: '数据保存失败，请稍后重试', details: lastError })
         }
-      } catch {
-        sendJson(res, 400, { error: 'BAD_REQUEST', message: '请求数据格式错误' })
+      } catch (parseError) {
+        console.error('[ERROR] POST /api/data JSON 解析失败:', parseError.message)
+        sendJson(res, 400, { error: 'BAD_REQUEST', message: '请求数据格式错误', details: parseError.message })
       }
       return
     }
