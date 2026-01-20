@@ -324,21 +324,30 @@ const useStore = create<AppState>((set, get) => {
 
   syncFromServer().then((serverData) => {
     if (serverData) {
-      applyAndPersist(serverData)
+      // 只更新状态，不立即保存（避免不必要的数据覆盖）
+      set({
+        projects: serverData.projects,
+        tasks: serverData.tasks,
+        taskTypes: serverData.taskTypes,
+        pmos: serverData.pmos,
+        productManagers: serverData.productManagers,
+        historyRecords: serverData.historyRecords
+      })
     } else {
       isFirstRun().then((firstRun) => {
         if (firstRun) {
           saveToServer(defaultData)
         } else {
           // 如果不是首次运行但服务器不可达，使用空数据而不是默认测试数据
-          applyAndPersist({
+          const emptyData = {
             projects: [],
             tasks: [],
             taskTypes: defaultData.taskTypes,
             pmos: [],
             productManagers: [],
             historyRecords: []
-          })
+          }
+          set(emptyData)
         }
       })
     }

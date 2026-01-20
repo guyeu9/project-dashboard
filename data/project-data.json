@@ -1,8 +1,8 @@
 {
   "projects": [
     {
-      "id": "test-project-1",
-      "name": "测试项目1"
+      "id": "full-test",
+      "name": "完整字段测试"
     }
   ],
   "tasks": [],

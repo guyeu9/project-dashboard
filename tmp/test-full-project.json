@@ -1,0 +1,25 @@
+{
+  "projects": [{
+    "id": "full-test",
+    "name": "完整字段测试",
+    "status": "normal",
+    "progress": 50,
+    "startDate": "2026-01-01",
+    "endDate": "2026-01-31",
+    "partners": ["partner1"],
+    "developers": ["dev1"],
+    "testers": ["tester1"],
+    "owner": "owner1",
+    "productManager": "pm1",
+    "pmo": "pmo1",
+    "remark": "test",
+    "chatGroupLinks": [],
+    "contacts": [],
+    "dailyProgress": []
+  }],
+  "tasks": [],
+  "taskTypes": [],
+  "pmos": [],
+  "productManagers": [],
+  "historyRecords": []
+}

@@ -42,13 +42,21 @@ const readJsonData = () => {
 const writeJsonData = (data) => {
   try {
     if (!data || typeof data !== 'object') {
-      console.error('[ERROR] 写入数据格式错误')
+      console.error('[ERROR] 写入数据格式错误:', data)
       return false
     }
     
     ensureDataDir()
     const tempFile = dataFile + '.tmp'
-    const content = JSON.stringify(data, null, 2)
+    
+    // 检查数据是否可以序列化
+    let content
+    try {
+      content = JSON.stringify(data, null, 2)
+    } catch (serializeError) {
+      console.error('[ERROR] 数据序列化失败:', serializeError.message)
+      return false
+    }
     
     fs.writeFileSync(tempFile, content, 'utf-8')
     fs.renameSync(tempFile, dataFile)
