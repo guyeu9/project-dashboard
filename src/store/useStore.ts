@@ -146,14 +146,19 @@ const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[]; t
   try {
     const res = await fetch(API_URL, { method: 'GET' })
     if (!res.ok) {
-      console.error('从服务端加载数据失败:', res.status)
+      console.error('[ERROR] 从服务端加载数据失败:', res.status, res.statusText)
       return null
     }
     const data = await res.json()
-    if (!data.projects || !data.tasks) {
-      console.error('服务端数据格式错误')
+    if (!data || typeof data !== 'object') {
+      console.error('[ERROR] 服务端数据格式错误')
       return null
     }
+    if (!data.projects || !data.tasks) {
+      console.error('[ERROR] 服务端数据缺少必要字段')
+      return null
+    }
+    console.log('[INFO] 从服务端成功加载数据')
     return {
       projects: data.projects as Project[],
       tasks: data.tasks as Task[],
@@ -163,7 +168,7 @@ const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[]; t
       historyRecords: (data.historyRecords || []) as HistoryRecord[],
     }
   } catch (error) {
-    console.error('从服务端加载数据失败:', error)
+    console.error('[ERROR] 从服务端加载数据失败:', error.message)
     return null
   }
 }
@@ -183,17 +188,41 @@ const isFirstRun = async (): Promise<boolean> => {
 }
 
 const saveToServer = async (data: { projects: Project[]; tasks: Task[]; taskTypes: TaskType[]; pmos: PMO[]; productManagers: ProductManager[]; historyRecords: HistoryRecord[] }) => {
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    })
-  } catch (error) {
-    console.error('保存数据到服务端失败:', error)
+  const MAX_RETRIES = 3
+  const RETRY_DELAY = 1000
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+      
+      if (res.ok) {
+        console.log('[INFO] 数据保存成功')
+        return
+      }
+      
+      console.error(`[ERROR] 数据保存失败 (尝试 ${attempt}/${MAX_RETRIES}):`, res.status, res.statusText)
+      
+      if (attempt < MAX_RETRIES) {
+        console.log(`[INFO] ${RETRY_DELAY}ms 后重试...`)
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
+      }
+    } catch (error) {
+      console.error(`[ERROR] 数据保存失败 (尝试 ${attempt}/${MAX_RETRIES}):`, error.message)
+      
+      if (attempt < MAX_RETRIES) {
+        console.log(`[INFO] ${RETRY_DELAY}ms 后重试...`)
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
+      }
+    }
   }
+  
+  console.error('[ERROR] 数据保存失败，已达到最大重试次数')
 }
 
 const useStore = create<AppState>((set, get) => {

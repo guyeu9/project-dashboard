@@ -21,23 +21,42 @@ const ensureDataDir = () => {
 const readJsonData = () => {
   try {
     if (!fs.existsSync(dataFile)) {
+      console.log('[INFO] 数据文件不存在:', dataFile)
       return null
     }
     const content = fs.readFileSync(dataFile, 'utf-8')
-    return JSON.parse(content)
-  } catch {
+    const data = JSON.parse(content)
+    
+    if (!data || typeof data !== 'object') {
+      console.warn('[WARN] 数据文件内容格式错误:', dataFile)
+      return null
+    }
+    
+    return data
+  } catch (error) {
+    console.error('[ERROR] 读取数据文件失败:', dataFile, error.message)
     return null
   }
 }
 
 const writeJsonData = (data) => {
   try {
+    if (!data || typeof data !== 'object') {
+      console.error('[ERROR] 写入数据格式错误')
+      return false
+    }
+    
     ensureDataDir()
     const tempFile = dataFile + '.tmp'
-    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8')
+    const content = JSON.stringify(data, null, 2)
+    
+    fs.writeFileSync(tempFile, content, 'utf-8')
     fs.renameSync(tempFile, dataFile)
+    
+    console.log('[INFO] 数据保存成功:', dataFile)
     return true
-  } catch {
+  } catch (error) {
+    console.error('[ERROR] 写入数据文件失败:', dataFile, error.message)
     return false
   }
 }
