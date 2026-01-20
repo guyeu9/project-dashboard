@@ -196,9 +196,36 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET') {
       const data = readJsonData()
       if (!data) {
-        sendJson(res, 200, { projects: [], tasks: [], taskTypes: [], pmos: [], productManagers: [], historyRecords: [] })
+        sendJson(res, 200, {
+          projects: [],
+          tasks: [],
+          taskTypes: [
+            { id: '1', name: '开发排期', color: '#1890ff', enabled: true },
+            { id: '2', name: '开发联调', color: '#52c41a', enabled: true },
+            { id: '3', name: '测试排期', color: '#faad14', enabled: true },
+            { id: '4', name: '测试联调', color: '#f5222d', enabled: true },
+            { id: '5', name: '产品UAT', color: '#722ed1', enabled: true },
+            { id: '6', name: '上线', color: '#13c2c2', enabled: true }
+          ],
+          pmos: [],
+          productManagers: [],
+          historyRecords: []
+        })
         return
       }
+      
+      // 确保 taskTypes 存在，如果为空则提供默认值
+      if (!Array.isArray(data.taskTypes) || data.taskTypes.length === 0) {
+        data.taskTypes = [
+          { id: '1', name: '开发排期', color: '#1890ff', enabled: true },
+          { id: '2', name: '开发联调', color: '#52c41a', enabled: true },
+          { id: '3', name: '测试排期', color: '#faad14', enabled: true },
+          { id: '4', name: '测试联调', color: '#f5222d', enabled: true },
+          { id: '5', name: '产品UAT', color: '#722ed1', enabled: true },
+          { id: '6', name: '上线', color: '#13c2c2', enabled: true }
+        ]
+      }
+      
       sendJson(res, 200, data)
       return
     }

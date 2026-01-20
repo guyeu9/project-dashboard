@@ -1,5 +1,50 @@
 # 生产环境部署问题分析
 
+## 最新更新（2024-01-19）
+
+### 问题：POST 500 错误 - 数据保存失败
+
+**错误现象**：
+```
+[INFO] 从服务端成功加载数据
+POST https://w2zpsddd9x.coze.site/api/data 500 (Internal Server Error)
+[ERROR] 数据保存失败 (尝试 1/3): 500
+```
+
+**根本原因**：
+生产环境运行的是 **Vite 开发服务器**（vite.js）而不是生产服务器（server.mjs），导致：
+- Vite 开发服务器无法正确处理 POST 请求
+- 缺少数据持久化逻辑
+- 返回 500 错误
+
+**修复方案**：
+1. 停止 Vite 开发服务器
+2. 启动生产环境 server.mjs
+3. 修改 server.mjs，确保 GET 请求返回默认的 taskTypes
+
+**执行步骤**：
+```bash
+# 1. 停止 Vite 开发服务器
+kill 1518
+
+# 2. 启动生产服务器
+nohup node server.mjs > /tmp/server.log 2>&1 &
+
+# 3. 验证服务器状态
+ss -lptn 'sport = :5000'
+
+# 4. 测试 API
+curl -X POST -H "Content-Type: application/json" -d '{"projects":[], "tasks":[], ...}' http://localhost:5000/api/data
+```
+
+**代码修改**：
+- `server.mjs:194-233` - 修改 GET 请求处理逻辑，确保 taskTypes 不为空
+- 当数据文件不存在或 taskTypes 为空时，返回默认的任务类型配置
+
+---
+
+## 原有问题分析
+
 ## 问题现象
 
 生产环境（w2zpsddd9x.coze.site）一直运行的是 **Vite 开发服务器**，而不是生产服务器（server.mjs），导致：
