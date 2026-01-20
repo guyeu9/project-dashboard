@@ -4,8 +4,8 @@ requires = ["nodejs-24"]
 
 [dev]
 build = ["pnpm", "install"]
-run = ["pnpm", "dev", "--port", "5000", "--host"]
+run = ["bash", "scripts/start.sh"]
 
 [deploy]
 build = ["pnpm", "run", "deploy:build"]
-run = ["node", "server.mjs"]
+run = ["NODE_ENV=production", "bash", "scripts/start.sh"]
