@@ -154,14 +154,46 @@ const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[]; t
       console.error('[ERROR] 服务端数据格式错误')
       return null
     }
-    if (!data.projects || !data.tasks) {
-      console.error('[ERROR] 服务端数据缺少必要字段')
-      return null
-    }
+    
+    // 确保 projects 和 tasks 是数组，并填充缺失的字段
+    const projects = Array.isArray(data.projects) ? data.projects.map((p: any) => ({
+      id: p.id || '',
+      name: p.name || '',
+      status: p.status || 'pending',
+      progress: typeof p.progress === 'number' ? p.progress : 0,
+      startDate: p.startDate || '',
+      endDate: p.endDate || '',
+      partners: Array.isArray(p.partners) ? p.partners : [],
+      developers: Array.isArray(p.developers) ? p.developers : [],
+      testers: Array.isArray(p.testers) ? p.testers : [],
+      owner: p.owner || '',
+      productManager: p.productManager || '',
+      pmo: p.pmo || '',
+      remark: p.remark || '',
+      chatGroupLinks: Array.isArray(p.chatGroupLinks) ? p.chatGroupLinks : [],
+      contacts: Array.isArray(p.contacts) ? p.contacts : [],
+      dailyProgress: Array.isArray(p.dailyProgress) ? p.dailyProgress : []
+    })) : []
+    
+    const tasks = Array.isArray(data.tasks) ? data.tasks.map((t: any) => ({
+      id: t.id || '',
+      projectId: t.projectId || '',
+      name: t.name || '',
+      type: t.type || { id: '', name: '', color: '', enabled: true },
+      status: t.status || 'pending',
+      progress: typeof t.progress === 'number' ? t.progress : 0,
+      startDate: t.startDate || '',
+      endDate: t.endDate || '',
+      assignees: Array.isArray(t.assignees) ? t.assignees : [],
+      dailyProgress: t.dailyProgress || '',
+      remark: t.remark || '',
+      dailyRecords: Array.isArray(t.dailyRecords) ? t.dailyRecords : []
+    })) : []
+    
     console.log('[INFO] 从服务端成功加载数据')
     return {
-      projects: data.projects as Project[],
-      tasks: data.tasks as Task[],
+      projects: projects as Project[],
+      tasks: tasks as Task[],
       taskTypes: (data.taskTypes || defaultData.taskTypes) as TaskType[],
       pmos: (data.pmos || defaultData.pmos) as PMO[],
       productManagers: (data.productManagers || defaultData.productManagers) as ProductManager[],
