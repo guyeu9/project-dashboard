@@ -1,23 +1,5 @@
 {
-  "projects": [
-    {
-      "id": "test-remote-code",
-      "name": "远程代码测试项目",
-      "status": "normal",
-      "progress": 0,
-      "startDate": "2026-01-20",
-      "endDate": "2026-02-20",
-      "owner": "",
-      "pmo": "",
-      "productManager": "",
-      "partners": [],
-      "developers": [],
-      "testers": [],
-      "chatGroupLinks": [],
-      "contacts": [],
-      "remark": ""
-    }
-  ],
+  "projects": [],
   "tasks": [],
   "taskTypes": [
     {
