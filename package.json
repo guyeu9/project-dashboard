@@ -18,6 +18,8 @@
     "pm2:status": "npx pm2 status",
     "pm2:monit": "npx pm2 monit",
     "monitor": "bash scripts/monitor.sh",
+    "diagnose": "bash scripts/diagnose.sh",
+    "fix:production": "bash scripts/fix-production.sh",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

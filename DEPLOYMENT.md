@@ -1,5 +1,21 @@
 # 生产环境部署问题分析
 
+## ⚡ 快速修复 POST 500 错误
+
+如果你遇到 `POST /api/data 500 (Internal Server Error)` 错误，请立即执行：
+
+```bash
+# 一键修复
+pnpm run fix:production
+
+# 验证修复
+pnpm run diagnose
+```
+
+详细故障排查请参考：[POST 500 错误故障排查指南](POST_500_ERROR_TROUBLESHOOTING.md)
+
+---
+
 ## 最新更新（2024-01-19）
 
 ### 问题：POST 500 错误 - 数据保存失败
