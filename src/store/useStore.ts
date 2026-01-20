@@ -181,7 +181,19 @@ const isFirstRun = async (): Promise<boolean> => {
       return true
     }
     const data = await res.json()
-    return !data || !data.projects || !data.tasks
+    // 如果数据不存在，或者数据是空对象（所有字段都是空数组），认为是首次运行
+    if (!data || typeof data !== 'object') {
+      return true
+    }
+    // 检查是否有实际的项目或任务数据（不仅仅是空数组）
+    const hasProjects = Array.isArray(data.projects) && data.projects.length > 0
+    const hasTasks = Array.isArray(data.tasks) && data.tasks.length > 0
+    const hasPMOs = Array.isArray(data.pmos) && data.pmos.length > 0
+    const hasProductManagers = Array.isArray(data.productManagers) && data.productManagers.length > 0
+    const hasHistory = Array.isArray(data.historyRecords) && data.historyRecords.length > 0
+    
+    // 如果没有任何实际数据，认为是首次运行
+    return !(hasProjects || hasTasks || hasPMOs || hasProductManagers || hasHistory)
   } catch (error) {
     console.error('检查是否首次运行失败:', error)
     return true
@@ -285,6 +297,16 @@ const useStore = create<AppState>((set, get) => {
       isFirstRun().then((firstRun) => {
         if (firstRun) {
           saveToServer(defaultData)
+        } else {
+          // 如果不是首次运行但服务器不可达，使用空数据而不是默认测试数据
+          applyAndPersist({
+            projects: [],
+            tasks: [],
+            taskTypes: defaultData.taskTypes,
+            pmos: [],
+            productManagers: [],
+            historyRecords: []
+          })
         }
       })
     }
