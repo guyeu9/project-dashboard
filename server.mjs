@@ -229,7 +229,7 @@ const server = http.createServer(async (req, res) => {
   serveStaticFile(req, res, parsedUrl)
 })
 
-const port = process.env.PORT || 4173
+const port = process.env.PORT || 5000
 
 server.listen(port, () => {
   process.stdout.write(`Server is running at http://localhost:${port}\n`)

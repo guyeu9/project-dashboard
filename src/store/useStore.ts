@@ -168,7 +168,8 @@ const syncFromServer = async (): Promise<{ projects: Project[]; tasks: Task[]; t
       historyRecords: (data.historyRecords || []) as HistoryRecord[],
     }
   } catch (error) {
-    console.error('[ERROR] 从服务端加载数据失败:', error.message)
+    const err = error as Error
+    console.error('[ERROR] 从服务端加载数据失败:', err.message)
     return null
   }
 }
@@ -213,7 +214,8 @@ const saveToServer = async (data: { projects: Project[]; tasks: Task[]; taskType
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
       }
     } catch (error) {
-      console.error(`[ERROR] 数据保存失败 (尝试 ${attempt}/${MAX_RETRIES}):`, error.message)
+      const err = error as Error
+      console.error(`[ERROR] 数据保存失败 (尝试 ${attempt}/${MAX_RETRIES}):`, err.message)
       
       if (attempt < MAX_RETRIES) {
         console.log(`[INFO] ${RETRY_DELAY}ms 后重试...`)

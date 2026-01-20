@@ -1,12 +1,12 @@
 {
   "projects": [
     {
-      "id": "project-1768815755383",
-      "name": "1111",
+      "id": "test-remote-code",
+      "name": "远程代码测试项目",
       "status": "normal",
       "progress": 0,
-      "startDate": "2026-01-19",
-      "endDate": "2026-02-19",
+      "startDate": "2026-01-20",
+      "endDate": "2026-02-20",
       "owner": "",
       "pmo": "",
       "productManager": "",
