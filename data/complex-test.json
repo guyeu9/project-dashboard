@@ -1,0 +1,134 @@
+{
+  "projects": [
+    {
+      "id": "1",
+      "name": "短剧小程序",
+      "status": "normal",
+      "progress": 75,
+      "startDate": "2026-01-01",
+      "endDate": "2026-02-15",
+      "partners": ["360金条"],
+      "developers": ["张三", "李四"],
+      "testers": ["王五", "赵六"],
+      "owner": "项目经理A",
+      "productManager": "产品经理A",
+      "pmo": "PMO-A",
+      "remark": "重点项目，需按时上线",
+      "chatGroupLinks": [],
+      "contacts": [],
+      "dailyProgress": []
+    },
+    {
+      "id": "2",
+      "name": "支付中台改造",
+      "status": "delayed",
+      "progress": 45,
+      "startDate": "2025-12-15",
+      "endDate": "2026-01-20",
+      "partners": ["支付宝", "微信支付"],
+      "developers": ["王靖博", "邓晓旭"],
+      "testers": ["史宁博"],
+      "owner": "项目经理B",
+      "productManager": "产品经理B",
+      "pmo": "PMO-B",
+      "remark": "存在技术难点，需要协调资源",
+      "chatGroupLinks": [],
+      "contacts": [],
+      "dailyProgress": []
+    },
+    {
+      "id": "3",
+      "name": "新添加的项目",
+      "status": "pending",
+      "progress": 0,
+      "startDate": "2026-01-20",
+      "endDate": "2026-02-28",
+      "partners": [],
+      "developers": [],
+      "testers": [],
+      "owner": "",
+      "productManager": "",
+      "pmo": "",
+      "remark": "",
+      "chatGroupLinks": [],
+      "contacts": [],
+      "dailyProgress": []
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-1",
+      "projectId": "1",
+      "name": "开发排期",
+      "type": { "id": "1", "name": "开发排期", "color": "#1890ff", "enabled": true },
+      "status": "normal",
+      "progress": 80,
+      "startDate": "2026-01-01",
+      "endDate": "2026-01-13",
+      "assignees": ["张三"],
+      "dailyProgress": "",
+      "remark": "",
+      "dailyRecords": [
+        {
+          "date": "2026-01-06",
+          "progress": 10,
+          "status": "risk",
+          "content": "项目启动，环境搭建完成",
+          "assignees": ["张三", "李四"]
+        }
+      ]
+    },
+    {
+      "id": "task-2",
+      "projectId": "1",
+      "name": "开发联调",
+      "type": { "id": "2", "name": "开发联调", "color": "#52c41a", "enabled": true },
+      "status": "normal",
+      "progress": 60,
+      "startDate": "2026-01-11",
+      "endDate": "2026-01-15",
+      "assignees": ["张三", "李四"],
+      "dailyProgress": "",
+      "remark": "",
+      "dailyRecords": []
+    }
+  ],
+  "taskTypes": [
+    { "id": "1", "name": "开发排期", "color": "#1890ff", "enabled": true },
+    { "id": "2", "name": "开发联调", "color": "#52c41a", "enabled": true },
+    { "id": "3", "name": "测试排期", "color": "#faad14", "enabled": true },
+    { "id": "4", "name": "测试联调", "color": "#f5222d", "enabled": true },
+    { "id": "5", "name": "产品UAT", "color": "#722ed1", "enabled": true },
+    { "id": "6", "name": "上线", "color": "#13c2c2", "enabled": true }
+  ],
+  "pmos": [
+    { "id": "pmo-1", "name": "PMO-A", "enabled": true },
+    { "id": "pmo-2", "name": "PMO-B", "enabled": true },
+    { "id": "pmo-3", "name": "PMO-C", "enabled": true },
+    { "id": "pmo-4", "name": "PMO-D", "enabled": true },
+    { "id": "pmo-5", "name": "PMO-E", "enabled": true }
+  ],
+  "productManagers": [
+    { "id": "pm-1", "name": "产品经理A", "enabled": true },
+    { "id": "pm-2", "name": "产品经理B", "enabled": true },
+    { "id": "pm-3", "name": "产品经理C", "enabled": true },
+    { "id": "pm-4", "name": "产品经理D", "enabled": true },
+    { "id": "pm-5", "name": "产品经理E", "enabled": true }
+  ],
+  "historyRecords": [
+    {
+      "id": "history-1",
+      "entityType": "project",
+      "entityId": "3",
+      "entityName": "新添加的项目",
+      "operation": "create",
+      "operator": "admin",
+      "operatedAt": "2026-01-20T00:00:00.000Z",
+      "changes": {
+        "name": { "from": "", "to": "新添加的项目" },
+        "status": { "from": "", "to": "pending" }
+      },
+      "projectId": "3"
+    }
+  ]
+}

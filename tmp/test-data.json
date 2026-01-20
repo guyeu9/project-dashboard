@@ -1,1 +1,89 @@
-{"projects":[{"id":"special-chars","name":"测试特殊字符"}],"tasks":[],"taskTypes":[],"pmos":[],"productManagers":[],"historyRecords":[]}
+{
+  "projects": [
+    {
+      "id": "proj-1",
+      "name": "测试项目1",
+      "status": "normal",
+      "progress": 50,
+      "startDate": "2026-01-20",
+      "endDate": "2026-02-20",
+      "partners": ["合作方A"],
+      "developers": ["张三", "李四"],
+      "testers": ["王五"],
+      "owner": "项目经理A",
+      "productManager": "产品经理A",
+      "pmo": "PMO-A",
+      "remark": "这是一个测试项目",
+      "chatGroupLinks": ["https://example.com/group1"],
+      "contacts": [
+        {"name": "张三", "role": "开发", "phone": "13800000001"}
+      ],
+      "dailyProgress": [
+        {
+          "date": "2026-01-20",
+          "progress": 50,
+          "status": "normal",
+          "content": "项目进行顺利",
+          "taskType": "development",
+          "assignees": ["张三", "李四"]
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-1",
+      "projectId": "proj-1",
+      "name": "任务1",
+      "type": {
+        "id": "1",
+        "name": "开发排期",
+        "color": "#1890ff",
+        "enabled": true
+      },
+      "status": "normal",
+      "progress": 50,
+      "startDate": "2026-01-20",
+      "endDate": "2026-01-25",
+      "assignees": ["张三", "李四"],
+      "dailyProgress": "进行中",
+      "remark": "测试任务",
+      "dailyRecords": [
+        {
+          "date": "2026-01-20",
+          "progress": 50,
+          "status": "normal",
+          "content": "任务进行中",
+          "assignees": ["张三"]
+        }
+      ]
+    }
+  ],
+  "taskTypes": [
+    {"id": "1", "name": "开发排期", "color": "#1890ff", "enabled": true},
+    {"id": "2", "name": "开发联调", "color": "#52c41a", "enabled": true},
+    {"id": "3", "name": "测试排期", "color": "#faad14", "enabled": true}
+  ],
+  "pmos": [
+    {"id": "pmo-1", "name": "PMO-A", "enabled": true}
+  ],
+  "productManagers": [
+    {"id": "pm-1", "name": "产品经理A", "enabled": true}
+  ],
+  "historyRecords": [
+    {
+      "id": "history-1",
+      "entityType": "project",
+      "entityId": "proj-1",
+      "entityName": "测试项目1",
+      "operation": "create",
+      "operator": "admin",
+      "operatedAt": "2026-01-20T00:00:00.000Z",
+      "changes": {
+        "name": {"from": "", "to": "测试项目1"},
+        "status": {"from": "", "to": "normal"}
+      },
+      "projectId": "proj-1"
+    }
+  ]
+}
