@@ -8,4 +8,4 @@ run = ["bash", "scripts/start.sh"]
 
 [deploy]
 build = ["pnpm", "run", "deploy:build"]
-run = ["NODE_ENV=production", "bash", "scripts/start.sh"]
+run = ["node", "server.mjs"]
