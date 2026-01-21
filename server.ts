@@ -4,11 +4,26 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getAllData, saveAllData } from "./src/api/dataApi.js";
 
+// 全局错误处理
+process.on('uncaughtException', (error) => {
+  console.error('[ERROR] Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[ERROR] Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distDir = path.resolve(__dirname, "dist");
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
+
+console.log('[INFO] Server starting...');
+console.log('[INFO] distDir:', distDir);
+console.log('[INFO] NODE_ENV:', process.env.NODE_ENV);
 
 const getRequestBody = (req: http.IncomingMessage): Promise<string> =>
   new Promise((resolve) => {

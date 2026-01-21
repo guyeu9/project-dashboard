@@ -8,4 +8,4 @@ run = ["pnpm", "dev"]
 
 [deploy]
 build = ["pnpm", "run", "deploy:build"]
-run = ["bash", "-c", "./node_modules/.bin/tsx server.ts"]
+run = ["npx", "tsx", "server.ts"]
