@@ -5,16 +5,19 @@ import { fileURLToPath } from 'url'
 import { URL } from 'url'
 
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
-const dataFile = path.resolve(rootDir, 'data', 'project-data.json')
 const distDir = path.resolve(rootDir, 'dist')
-const lockFile = path.resolve(rootDir, 'data', 'data.lock')
+
+// 使用 /tmp 目录存储数据，避免生产环境只读文件系统问题
+const dataDir = path.resolve('/tmp', 'project-schedule-data')
+const dataFile = path.resolve(dataDir, 'project-data.json')
+const lockFile = path.resolve(dataDir, 'data.lock')
 const MAX_RETRIES = 3
 const RETRY_DELAY = 1000
 
 const ensureDataDir = () => {
-  const dir = path.dirname(dataFile)
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true })
+  if (!fs.existsSync(dataDir)) {
+    console.log('[INFO] 创建数据目录:', dataDir)
+    fs.mkdirSync(dataDir, { recursive: true })
   }
 }
 
@@ -71,6 +74,9 @@ const writeJsonData = (data) => {
 
 const acquireLock = () => {
   try {
+    // 确保数据目录存在
+    ensureDataDir()
+    
     if (fs.existsSync(lockFile)) {
       const lockTime = parseInt(fs.readFileSync(lockFile, 'utf-8'))
       const now = Date.now()
