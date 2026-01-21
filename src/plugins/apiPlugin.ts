@@ -15,7 +15,10 @@ export function apiPlugin() {
           try {
             if (req.method === 'GET') {
               if (!fs.existsSync(dataFilePath)) {
-                res.writeHead(200, { 'Content-Type': 'application/json' })
+                res.writeHead(200, { 
+                  'Content-Type': 'application/json',
+                  'Access-Control-Allow-Origin': '*'
+                })
                 res.end(JSON.stringify({
                   projects: [],
                   tasks: [],
@@ -28,26 +31,49 @@ export function apiPlugin() {
               }
               
               const data = JSON.parse(fs.readFileSync(dataFilePath, 'utf-8'))
-              res.writeHead(200, { 'Content-Type': 'application/json' })
+              res.writeHead(200, { 
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+              })
               res.end(JSON.stringify(data))
               return
             }
             
             if (req.method === 'POST') {
-              let body = ''
+              const chunks = []
               req.on('data', chunk => {
-                body += chunk
+                chunks.push(chunk)
               })
               
               req.on('end', () => {
                 try {
+                  const body = Buffer.concat(chunks).toString('utf-8')
                   const data = body ? JSON.parse(body) : {}
+                  
+                  // 确保目录存在
+                  const dir = path.dirname(dataFilePath)
+                  if (!fs.existsSync(dir)) {
+                    fs.mkdirSync(dir, { recursive: true })
+                  }
+                  
                   fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2), 'utf-8')
-                  res.writeHead(200, { 'Content-Type': 'application/json' })
+                  
+                  res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                  })
                   res.end(JSON.stringify({ ok: true, message: '数据保存成功' }))
                 } catch (error) {
-                  res.writeHead(400, { 'Content-Type': 'application/json' })
-                  res.end(JSON.stringify({ error: 'BAD_REQUEST', message: '请求数据格式错误' }))
+                  console.error('[API Plugin] POST 保存失败:', error.message)
+                  res.writeHead(500, {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                  })
+                  res.end(JSON.stringify({ 
+                    error: 'INTERNAL_SERVER_ERROR', 
+                    message: '服务器内部错误',
+                    details: error.message 
+                  }))
                 }
               })
               return

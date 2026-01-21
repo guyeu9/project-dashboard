@@ -1,24 +1,3 @@
 {
-  "projects": [
-    {
-      "id": "test-2",
-      "name": "新测试项目",
-      "status": "pending",
-      "progress": 0,
-      "developers": [],
-      "testers": []
-    }
-  ],
-  "tasks": [],
-  "taskTypes": [
-    {
-      "id": "1",
-      "name": "开发排期",
-      "color": "#1890ff",
-      "enabled": true
-    }
-  ],
-  "pmos": [],
-  "productManagers": [],
-  "historyRecords": []
+  "test": "final_test"
 }
