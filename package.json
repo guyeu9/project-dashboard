@@ -28,6 +28,7 @@
     "@types/lodash": "^4.17.21",
     "antd": "^5.12.0",
     "axios": "^1.6.2",
+    "coze-coding-dev-sdk": "^0.7.3",
     "dayjs": "^1.11.10",
     "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.8.3",
