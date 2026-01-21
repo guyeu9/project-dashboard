@@ -1,7 +1,9 @@
 import { pgTable, index, varchar, timestamp, jsonb, boolean, integer, text } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
+import { createSchemaFactory } from "drizzle-zod"
+import { z } from "zod"
 
-
+// ==================== 表定义 ====================
 
 export const historyRecords = pgTable("history_records", {
 	id: varchar({ length: 36 }).primaryKey().notNull(),
@@ -100,3 +102,174 @@ export const tasks = pgTable("tasks", {
 	index("tasks_start_date_idx").using("btree", table.startDate.asc().nullsLast().op("timestamptz_ops")),
 	index("tasks_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
 ]);
+
+// ==================== Zod Schemas ====================
+
+// 使用 createSchemaFactory 配置 date coercion（处理前端 string → Date 转换）
+const { createInsertSchema: createCoercedInsertSchema } = createSchemaFactory({
+  coerce: { date: true },
+});
+
+// TaskType Schemas
+export const insertTaskTypeSchema = createCoercedInsertSchema(taskTypes).pick({
+  id: true,
+  name: true,
+  color: true,
+  enabled: true,
+});
+
+export const updateTaskTypeSchema = createCoercedInsertSchema(taskTypes)
+  .pick({
+    name: true,
+    color: true,
+    enabled: true,
+  })
+  .partial();
+
+export type TaskType = typeof taskTypes.$inferSelect;
+export type InsertTaskType = z.infer<typeof insertTaskTypeSchema>;
+export type UpdateTaskType = z.infer<typeof updateTaskTypeSchema>;
+
+// PMO Schemas
+export const insertPmoSchema = createCoercedInsertSchema(pmos).pick({
+  id: true,
+  name: true,
+  enabled: true,
+});
+
+export const updatePmoSchema = createCoercedInsertSchema(pmos)
+  .pick({
+    name: true,
+    enabled: true,
+  })
+  .partial();
+
+export type PMO = typeof pmos.$inferSelect;
+export type InsertPmo = z.infer<typeof insertPmoSchema>;
+export type UpdatePmo = z.infer<typeof updatePmoSchema>;
+
+// ProductManager Schemas
+export const insertProductManagerSchema = createCoercedInsertSchema(productManagers).pick({
+  id: true,
+  name: true,
+  enabled: true,
+});
+
+export const updateProductManagerSchema = createCoercedInsertSchema(productManagers)
+  .pick({
+    name: true,
+    enabled: true,
+  })
+  .partial();
+
+export type ProductManager = typeof productManagers.$inferSelect;
+export type InsertProductManager = z.infer<typeof insertProductManagerSchema>;
+export type UpdateProductManager = z.infer<typeof updateProductManagerSchema>;
+
+// Project Schemas
+export const insertProjectSchema = createCoercedInsertSchema(projects).pick({
+  id: true,
+  name: true,
+  status: true,
+  progress: true,
+  startDate: true,
+  endDate: true,
+  partners: true,
+  developers: true,
+  testers: true,
+  owner: true,
+  productManager: true,
+  pmo: true,
+  remark: true,
+  chatGroupLinks: true,
+  contacts: true,
+  dailyProgress: true,
+});
+
+export const updateProjectSchema = createCoercedInsertSchema(projects)
+  .pick({
+    name: true,
+    status: true,
+    progress: true,
+    startDate: true,
+    endDate: true,
+    partners: true,
+    developers: true,
+    testers: true,
+    owner: true,
+    productManager: true,
+    pmo: true,
+    remark: true,
+    chatGroupLinks: true,
+    contacts: true,
+    dailyProgress: true,
+  })
+  .partial();
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type UpdateProject = z.infer<typeof updateProjectSchema>;
+
+// Task Schemas
+export const insertTaskSchema = createCoercedInsertSchema(tasks).pick({
+  id: true,
+  projectId: true,
+  name: true,
+  type: true,
+  status: true,
+  progress: true,
+  startDate: true,
+  endDate: true,
+  assignees: true,
+  dailyProgress: true,
+  remark: true,
+  dailyRecords: true,
+});
+
+export const updateTaskSchema = createCoercedInsertSchema(tasks)
+  .pick({
+    projectId: true,
+    name: true,
+    type: true,
+    status: true,
+    progress: true,
+    startDate: true,
+    endDate: true,
+    assignees: true,
+    dailyProgress: true,
+    remark: true,
+    dailyRecords: true,
+  })
+  .partial();
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type UpdateTask = z.infer<typeof updateTaskSchema>;
+
+// HistoryRecord Schemas
+export const insertHistoryRecordSchema = createCoercedInsertSchema(historyRecords).pick({
+  id: true,
+  entityType: true,
+  entityId: true,
+  entityName: true,
+  operation: true,
+  operator: true,
+  operatedAt: true,
+  changes: true,
+  projectId: true,
+});
+
+export const updateHistoryRecordSchema = createCoercedInsertSchema(historyRecords)
+  .pick({
+    entityType: true,
+    entityName: true,
+    operation: true,
+    operator: true,
+    changes: true,
+    projectId: true,
+  })
+  .partial();
+
+export type HistoryRecord = typeof historyRecords.$inferSelect;
+export type InsertHistoryRecord = z.infer<typeof insertHistoryRecordSchema>;
+export type UpdateHistoryRecord = z.infer<typeof updateHistoryRecordSchema>;
