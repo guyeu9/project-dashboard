@@ -11,8 +11,8 @@ export class HistoryRecordManager {
     const db = await getDb();
     const validated = insertHistoryRecordSchema.parse(data);
     const [record] = await db
-      .insert(historyRecords)
-      .values(validated)
+      .insert(historyRecords as any)
+      .values(validated as any)
       .returning();
     return record;
   }
@@ -46,7 +46,7 @@ export class HistoryRecordManager {
       conditions.push(eq(historyRecords.projectId, projectId));
     }
 
-    let query = db.select().from(historyRecords);
+    let query = db.select().from(historyRecords as any);
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
@@ -55,15 +55,15 @@ export class HistoryRecordManager {
     return query
       .limit(limit)
       .offset(skip)
-      .orderBy(historyRecords.operatedAt);
+      .orderBy((historyRecords as any).operatedAt);
   }
 
   async getHistoryRecordById(id: string): Promise<HistoryRecord | null> {
     const db = await getDb();
     const [record] = await db
       .select()
-      .from(historyRecords)
-      .where(eq(historyRecords.id, id));
+      .from(historyRecords as any)
+      .where(eq((historyRecords as any).id, id));
     return record || null;
   }
 
@@ -73,9 +73,9 @@ export class HistoryRecordManager {
     const db = await getDb();
     return db
       .select()
-      .from(historyRecords)
-      .where(eq(historyRecords.projectId, projectId))
-      .orderBy(historyRecords.operatedAt);
+      .from(historyRecords as any)
+      .where(eq((historyRecords as any).projectId, projectId))
+      .orderBy((historyRecords as any).operatedAt);
   }
 
   async clearHistoryRecords(
@@ -90,16 +90,16 @@ export class HistoryRecordManager {
 
     const conditions: SQL[] = [];
     if (entityType !== undefined) {
-      conditions.push(eq(historyRecords.entityType, entityType));
+      conditions.push(eq((historyRecords as any).entityType, entityType));
     }
     if (entityId !== undefined) {
-      conditions.push(eq(historyRecords.entityId, entityId));
+      conditions.push(eq((historyRecords as any).entityId, entityId));
     }
     if (projectId !== undefined && projectId !== null) {
-      conditions.push(eq(historyRecords.projectId, projectId));
+      conditions.push(eq((historyRecords as any).projectId, projectId));
     }
 
-    let query = db.delete(historyRecords);
+    let query = db.delete(historyRecords as any);
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions));

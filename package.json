@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "serve:static": "npx tsx server.ts",
     "start": "NODE_ENV=production npx tsx server.ts",

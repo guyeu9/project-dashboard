@@ -1,100 +1,118 @@
 // @ts-nocheck
-import fs from 'fs'
-import path from 'path'
-
-const rootDir = path.resolve()
+import { getAllData, saveAllData } from '../api/dataApi.js'
 
 export function apiPlugin() {
   return {
     name: 'api-plugin',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if (req.url?.startsWith('/api/data')) {
-          const dataFilePath = path.resolve(rootDir, 'data', 'project-data.json')
-          
-          try {
-            if (req.method === 'GET') {
-              if (!fs.existsSync(dataFilePath)) {
-                res.writeHead(200, { 
-                  'Content-Type': 'application/json',
-                  'Access-Control-Allow-Origin': '*'
-                })
+        // 测试端点：直接返回收到的数据
+        if (req.url?.startsWith('/api/test')) {
+          res.setHeader('Access-Control-Allow-Origin', '*')
+          res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+          if (req.method === 'OPTIONS') {
+            res.statusCode = 204
+            res.end()
+            return
+          }
+
+          if (req.method === 'POST') {
+            const chunks = []
+            req.on('data', chunk => {
+              chunks.push(chunk)
+            })
+
+            req.on('end', () => {
+              try {
+                const body = Buffer.concat(chunks).toString('utf-8')
+                const data = body ? JSON.parse(body) : {}
+                console.log('[API Test] 收到的数据:', JSON.stringify(data, null, 2).substring(0, 1000))
+                res.statusCode = 200
+                res.setHeader('Content-Type', 'application/json')
                 res.end(JSON.stringify({
-                  projects: [],
-                  tasks: [],
-                  taskTypes: [],
-                  pmos: [],
-                  productManagers: [],
-                  historyRecords: []
+                  message: '收到数据',
+                  data: data
                 }))
-                return
+              } catch (error) {
+                console.error('[API Test] 错误:', error.message)
+                res.statusCode = 500
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ error: error.message }))
               }
-              
-              const data = JSON.parse(fs.readFileSync(dataFilePath, 'utf-8'))
-              res.writeHead(200, { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-              })
+            })
+            return
+          }
+        }
+
+        if (req.url?.startsWith('/api/data')) {
+          // 设置 CORS 头
+          res.setHeader('Access-Control-Allow-Origin', '*')
+          res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+          try {
+            if (req.method === 'OPTIONS') {
+              res.statusCode = 204
+              res.end()
+              return
+            }
+
+            if (req.method === 'GET') {
+              const data = await getAllData()
+              res.statusCode = 200
+              res.setHeader('Content-Type', 'application/json')
               res.end(JSON.stringify(data))
               return
             }
-            
+
             if (req.method === 'POST') {
               const chunks = []
               req.on('data', chunk => {
                 chunks.push(chunk)
               })
-              
-              req.on('end', () => {
+
+              req.on('end', async () => {
                 try {
                   const body = Buffer.concat(chunks).toString('utf-8')
+                  console.log('[API Plugin] 收到的请求体:', body.substring(0, 200))
+
                   const data = body ? JSON.parse(body) : {}
-                  
-                  // 确保目录存在
-                  const dir = path.dirname(dataFilePath)
-                  if (!fs.existsSync(dir)) {
-                    fs.mkdirSync(dir, { recursive: true })
-                  }
-                  
-                  fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2), 'utf-8')
-                  
-                  res.writeHead(200, {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
+                  console.log('[API Plugin] 解析后的数据:', {
+                    projectsCount: Array.isArray(data.projects) ? data.projects.length : 0,
+                    hasStartDate: data.projects?.[0]?.startDate,
+                    startDateType: typeof data.projects?.[0]?.startDate
                   })
-                  res.end(JSON.stringify({ ok: true, message: '数据保存成功' }))
+
+                  const result = await saveAllData(data)
+                  console.log('[API Plugin] 保存成功')
+                  res.statusCode = 200
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify(result))
                 } catch (error) {
                   console.error('[API Plugin] POST 保存失败:', error.message)
-                  res.writeHead(500, {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                  })
-                  res.end(JSON.stringify({ 
-                    error: 'INTERNAL_SERVER_ERROR', 
+                  console.error('[API Plugin] 错误堆栈:', error.stack)
+                  res.statusCode = 500
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify({
+                    error: 'INTERNAL_SERVER_ERROR',
                     message: '服务器内部错误',
-                    details: error.message 
+                    details: error.message
                   }))
                 }
               })
               return
             }
-            
-            if (req.method === 'OPTIONS') {
-              res.writeHead(204, {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Max-Age': '86400'
-              })
-              res.end()
-              return
-            }
-            
-            res.writeHead(405, { 'Content-Type': 'text/plain' })
+
+            res.statusCode = 405
+            res.setHeader('Content-Type', 'text/plain')
             res.end('Method Not Allowed')
           } catch (error) {
-            res.writeHead(500, { 'Content-Type': 'application/json' })
-            res.end(JSON.stringify({ error: 'INTERNAL_SERVER_ERROR', message: '服务器内部错误' }))
+            console.error('[API Plugin] 错误:', error.message)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'INTERNAL_SERVER_ERROR', message: '服务器内部错误', details: error.message }))
           }
         } else {
           next()
