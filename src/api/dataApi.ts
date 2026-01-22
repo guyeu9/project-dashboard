@@ -60,15 +60,18 @@ function normalizeDates(obj: any, dateFields: string[]): any {
   const result = { ...obj };
 
   for (const field of dateFields) {
-    // 如果字段不存在或为空，保持为 null
-    if (!result[field]) {
+    const fieldValue = result[field];
+
+    // 如果字段不存在、为 null、undefined 或空字符串，设置为 null
+    if (fieldValue === null || fieldValue === undefined || fieldValue === '') {
       result[field] = null;
       continue;
     }
 
-    if (typeof result[field] === 'string') {
+    if (typeof fieldValue === 'string') {
+      const dateStr = fieldValue.trim();
+
       // 如果是 'YYYY-MM-DD' 格式，转换为 ISO 格式
-      const dateStr = result[field];
       if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         // 使用 UTC 时间，避免时区问题
         const [year, month, day] = dateStr.split('-').map(Number)
@@ -77,7 +80,7 @@ function normalizeDates(obj: any, dateFields: string[]): any {
         // 已经是 ISO 格式，不需要转换
         result[field] = dateStr
       } else {
-        // 尝试使用浏览器默认解析
+        // 尝试使用默认解析
         const parsed = new Date(dateStr)
         if (!isNaN(parsed.getTime())) {
           result[field] = parsed.toISOString()
@@ -85,9 +88,9 @@ function normalizeDates(obj: any, dateFields: string[]): any {
           result[field] = null;
         }
       }
-    } else if (result[field] instanceof Date) {
+    } else if (fieldValue instanceof Date) {
       // 如果已经是 Date 对象，转换为 ISO 字符串
-      result[field] = result[field].toISOString();
+      result[field] = fieldValue.toISOString();
     } else {
       // 其他类型，设置为 null
       result[field] = null;
@@ -107,13 +110,10 @@ export async function saveAllData(data: {
   historyRecords?: any[];
 }) {
   try {
-    console.log('[saveAllData] 开始保存数据，项目数:', data.projects?.length, '任务数:', data.tasks?.length);
-
     const db = await getDb();
 
     // 使用事务确保数据一致性
     await db.transaction(async (tx) => {
-      console.log('[saveAllData] 开始事务，清空现有数据');
       await tx.delete(tasks as any);
       await tx.delete(projects as any);
       await tx.delete(taskTypes as any);
@@ -122,25 +122,39 @@ export async function saveAllData(data: {
 
       // 插入新数据 - 直接插入，跳过 schema 验证
       if (data.projects && data.projects.length > 0) {
-        const normalizedProjects = data.projects.map((project) =>
-          normalizeDates(project, ['startDate', 'endDate'])
-        );
+        const normalizedProjects = data.projects.map((project) => {
+          const normalized = normalizeDates(project, ['startDate', 'endDate']);
+
+          // 确保日期不是 null 或空字符串，使用当前日期作为默认值
+          const today = new Date().toISOString();
+
+          // 如果日期为 null 或无效，使用当前日期
+          return {
+            ...normalized,
+            startDate: normalized.startDate || today,
+            endDate: normalized.endDate || today,
+          };
+        });
         await tx.insert(projects as any).values(normalizedProjects as any);
       }
 
       if (data.tasks && data.tasks.length > 0) {
-        const normalizedTasks = data.tasks.map((task, index) => {
+        const normalizedTasks = data.tasks.map((task) => {
           const normalized = normalizeDates(task, ['startDate', 'endDate']);
+
+          // 为空日期提供默认值（使用当前日期）
+          const today = new Date().toISOString();
+
           // 确保所有字段都存在，避免 SQL 参数不匹配
           return {
-            id: normalized.id || `task-${Date.now()}-${index}`,
+            id: normalized.id || `task-${Date.now()}`,
             projectId: normalized.projectId || '',
             name: normalized.name || '',
             type: normalized.type || {},
             status: normalized.status || 'pending',
             progress: normalized.progress || 0,
-            startDate: normalized.startDate || null,
-            endDate: normalized.endDate || null,
+            startDate: normalized.startDate || today,
+            endDate: normalized.endDate || today,
             assignees: Array.isArray(normalized.assignees) ? normalized.assignees : [],
             dailyProgress: normalized.dailyProgress || '',
             remark: normalized.remark || '',

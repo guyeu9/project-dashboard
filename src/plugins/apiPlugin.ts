@@ -76,14 +76,8 @@ export function apiPlugin() {
               req.on('end', async () => {
                 try {
                   const body = Buffer.concat(chunks).toString('utf-8')
-                  console.log('[API Plugin] 收到的请求体:', body.substring(0, 200))
 
                   const data = body ? JSON.parse(body) : {}
-                  console.log('[API Plugin] 解析后的数据:', {
-                    projectsCount: Array.isArray(data.projects) ? data.projects.length : 0,
-                    hasStartDate: data.projects?.[0]?.startDate,
-                    startDateType: typeof data.projects?.[0]?.startDate
-                  })
 
                   const result = await saveAllData(data)
                   console.log('[API Plugin] 保存成功')
