@@ -20,14 +20,14 @@ interface ParsedTask {
 }
 
 function SmartParser() {
-  const { addTask, addProject, updateProject, taskTypes } = useStore()
+  const { addTask, addProject, updateProject, taskTypes, projects } = useStore()
   const { message } = AntApp.useApp()
   const { role } = useAuthStore()
   const isAdmin = role === 'admin'
   const [inputText, setInputText] = useState('')
   const [parsedTasks, setParsedTasks] = useState<ParsedTask[]>([])
   const [importModalVisible, setImportModalVisible] = useState(false)
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('1')
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('')
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
 
@@ -120,6 +120,16 @@ function SmartParser() {
       return
     }
     
+    // 过滤出未完成的项目
+    const incompleteProjects = projects.filter(p => p.status !== 'completed')
+    
+    if (incompleteProjects.length === 0) {
+      message.warning('没有可导入的未完成项目，请新建项目')
+      return
+    }
+    
+    // 默认选中第一个未完成项目
+    setSelectedProjectId(incompleteProjects[0].id)
     setImportModalVisible(true)
   }
 
@@ -381,17 +391,20 @@ function SmartParser() {
       >
         <div className="import-confirm">
           <p>即将导入 <strong>{parsedTasks.length}</strong> 个任务到甘特图</p>
-          <p>目标项目ID：</p>
+          <p>目标项目：</p>
           <Select
             value={selectedProjectId}
             onChange={setSelectedProjectId}
+            placeholder="请选择目标项目"
             style={{ width: '100%', marginTop: 16 }}
           >
-            <Option value="1">短剧小程序</Option>
-            <Option value="2">支付中台改造</Option>
-            <Option value="3">用户中心升级</Option>
-            <Option value="4">数据报表系统</Option>
-            <Option value="5">营销活动平台</Option>
+            {projects
+              .filter(p => p.status !== 'completed')
+              .map(project => (
+                <Option key={project.id} value={project.id}>
+                  {project.name} ({project.status === 'normal' ? '进行中' : project.status === 'delayed' ? '延期' : project.status === 'risk' ? '风险' : project.status === 'pending' ? '待开始' : '已完成'})
+                </Option>
+              ))}
           </Select>
         </div>
       </Modal>
