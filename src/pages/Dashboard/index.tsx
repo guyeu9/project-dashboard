@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Card, Row, Col, Spin, Tag, Space, Button, Alert } from 'antd'
+import { Card, Row, Col, Spin, Tag, Space } from 'antd'
 import { 
   ClockCircleOutlined,
   ProjectOutlined,
   CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  BellOutlined,
-  ReloadOutlined
+  ExclamationCircleOutlined
 } from '@ant-design/icons'
 import { motion, AnimatePresence } from 'framer-motion'
 import useStore from '../../store/useStore'
@@ -20,7 +18,6 @@ function Dashboard() {
   const { notifications, unreadCount } = useNotificationStore()
   const [loading, setLoading] = useState(false)
   const [selectedFilter, setSelectedFilter] = useState<string>('all')
-  const [debugMode, setDebugMode] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -104,17 +101,6 @@ function Dashboard() {
 
   const handleFilterClick = (key: string) => {
     setSelectedFilter(key === selectedFilter ? 'all' : key)
-  }
-
-  const handleManualNotificationCheck = () => {
-    console.log('[Dashboard] Manually triggering notification check...')
-    // 在控制台手动触发通知检查
-    if (typeof window !== 'undefined' && (window as any).triggerNotifications) {
-      const result = (window as any).triggerNotifications()
-      alert(result)
-    } else {
-      alert('调试工具未加载，请刷新页面后重试')
-    }
   }
 
   const container = {
@@ -238,74 +224,6 @@ function Dashboard() {
           </AnimatePresence>
         </Col>
       </Row>
-
-      {/* 调试工具 */}
-      {debugMode && (
-        <Card 
-          title="通知调试工具" 
-          style={{ marginTop: 24 }}
-          extra={
-            <Button 
-              type="primary" 
-              icon={<ReloadOutlined />} 
-              onClick={handleManualNotificationCheck}
-            >
-              手动触发通知检查
-            </Button>
-          }
-        >
-          <Row gutter={[16, 16]}>
-            <Col span={12}>
-              <Alert
-                message="通知状态"
-                description={
-                  <div>
-                    <p>总通知数: {notifications.length}</p>
-                    <p>未读通知数: {unreadCount}</p>
-                  </div>
-                }
-                type="info"
-              />
-            </Col>
-            <Col span={12}>
-              <Alert
-                message="通知列表"
-                description={
-                  notifications.length > 0 ? (
-                    <ul style={{ maxHeight: 200, overflowY: 'auto' }}>
-                      {notifications.map(n => (
-                        <li key={n.id}>
-                          <strong>{n.taskName}</strong> ({n.projectName}) - {n.remindTime} [{n.status}]
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>暂无通知</p>
-                  )
-                }
-                type={unreadCount > 0 ? 'warning' : 'success'}
-              />
-            </Col>
-          </Row>
-        </Card>
-      )}
-
-      {/* 调试模式开关 */}
-      <div style={{ 
-        position: 'fixed', 
-        bottom: 20, 
-        right: 20, 
-        zIndex: 1000,
-        cursor: 'pointer'
-      }}>
-        <Button 
-          type="default" 
-          size="small"
-          onClick={() => setDebugMode(!debugMode)}
-        >
-          {debugMode ? '关闭' : '开启'}调试
-        </Button>
-      </div>
 
       <AIAnalysisModal />
     </motion.div>
