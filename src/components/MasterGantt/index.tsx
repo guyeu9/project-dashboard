@@ -121,11 +121,11 @@ function MasterGantt({ projects }: MasterGanttProps) {
       case '产品UAT':
       case '产品':
       case 'UAT':
-        return project.productManager ? [project.productManager] : []
+        return project.productManager ? [getProductManagerName(project.productManager)] : []
       case '上线':
       case '部署':
       case '发布':
-        return project.pmo ? [project.pmo] : []
+        return project.pmo ? [getPMOName(project.pmo)] : []
       default:
         return task.assignees
     }
