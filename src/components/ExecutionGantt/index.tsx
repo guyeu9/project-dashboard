@@ -68,6 +68,27 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask,
         ),
       },
       {
+        title: '周期',
+        key: 'period',
+        width: 120,
+        render: (_: any, record: Task) => {
+          const startDate = dayjs(record.startDate).format('YYYY.MM.DD')
+          const endDate = dayjs(record.endDate).format('YYYY.MM.DD')
+          return (
+            <div className="task-period-cell">
+              <div className="period-date">
+                <span className="period-label">开始：</span>
+                {startDate}
+              </div>
+              <div className="period-date">
+                <span className="period-label">结束：</span>
+                {endDate}
+              </div>
+            </div>
+          )
+        },
+      },
+      {
               title: '状态',
               dataIndex: 'status',
               key: 'status',
