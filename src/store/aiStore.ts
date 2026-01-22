@@ -847,10 +847,6 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
     pending: targetTasks.filter(t => t.status === 'pending').length
   }
 
-  const avgProgress = targetProjects.length > 0 
-    ? Math.round(targetProjects.reduce((sum, p) => sum + p.progress, 0) / targetProjects.length)
-    : 0
-
   // B. 项目概览（逐个项目）
   const projectOverview = targetProjects.map(p => {
     const startDate = new Date(p.startDate)
@@ -866,7 +862,6 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
       项目名称: p.name,
       项目ID: p.id,
       项目状态: getStatusText(p.status),
-      整体进度: `${p.progress}%`,
       项目负责人: p.owner,
       产品经理: p.productManager || '未指定',
       PMO: p.pmo || '未指定',
@@ -877,8 +872,8 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
       已用天数: `${usedDays}天`,
       剩余天数: `${remainingDays}天`,
       项目备注: p.remark || '无',
-      最近进展: recentProgress.map(record => 
-        `${record.date}：${record.content}（进度：${record.progress}%，状态：${getStatusText(record.status)}）`
+      最近进展: recentProgress.map(record =>
+        `${record.date}：${record.content}（状态：${getStatusText(record.status)}）`
       ).join('\n') || '暂无进展记录'
     }
   })
@@ -899,13 +894,12 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
       任务类型: t.type.name,
       所属项目: project ? project.name : '未知项目',
       任务状态: getStatusText(t.status),
-      完成进度: `${t.progress}%`,
       计划排期: `${t.startDate} 至 ${t.endDate}`,
       已用天数: `${usedDays}天`,
       执行人员: t.assignees.join('、'),
       任务备注: t.remark || '无',
-      最近记录: recentRecords.map(record => 
-        `${record.date}：${record.content}（进度：${record.progress}%，状态：${getStatusText(record.status)}）`
+      最近记录: recentRecords.map(record =>
+        `${record.date}：${record.content}（状态：${getStatusText(record.status)}）`
       ).join('\n') || '暂无记录'
     }
   })
@@ -914,7 +908,6 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
   const riskProjects = targetProjects.filter(p => p.status === 'risk').map(p => ({
     项目名称: p.name,
     风险描述: p.remark || '存在风险',
-    项目进度: `${p.progress}%`,
     项目负责人: p.owner
   }))
 
@@ -925,7 +918,6 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
       项目名称: p.name,
       延期天数: `${delayDays}天`,
       延期原因: p.remark || '进度滞后',
-      项目进度: `${p.progress}%`,
       项目负责人: p.owner
     }
   })
@@ -936,7 +928,6 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
       任务名称: t.name,
       所属项目: project ? project.name : '未知项目',
       风险描述: t.remark || '存在风险',
-      任务进度: `${t.progress}%`,
       执行人员: t.assignees.join('、')
     }
   })
@@ -950,7 +941,6 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
       所属项目: project ? project.name : '未知项目',
       延期天数: `${delayDays}天`,
       延期原因: t.remark || '进度滞后',
-      任务进度: `${t.progress}%`,
       执行人员: t.assignees.join('、')
     }
   })
@@ -976,8 +966,6 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
 - 风险任务：${taskStatusStats.risk} 个
 - 已完成任务：${taskStatusStats.completed} 个
 - 待开始任务：${taskStatusStats.pending} 个
-
-**整体进度：** 平均项目进度为 ${avgProgress}%
 `
 
   const projectText = `
@@ -991,7 +979,6 @@ ${projectOverview.map((p, index) => `
 **基本信息：**
 - 项目ID：${p.项目ID}
 - 项目状态：${p.项目状态}
-- 整体进度：${p.整体进度}
 
 **项目团队：**
 - 项目负责人：${p.项目负责人}
@@ -1049,7 +1036,6 @@ ${t.最近记录.split('\n').map(line => `- ${line}`).join('\n')}
 ${riskProjects.length > 0 ? riskProjects.map(p => `
 - **${p.项目名称}**
   - 风险描述：${p.风险描述}
-  - 项目进度：${p.项目进度}
   - 项目负责人：${p.项目负责人}
 `).join('') : '暂无风险项目'}
 
@@ -1058,7 +1044,6 @@ ${delayedProjects.length > 0 ? delayedProjects.map(p => `
 - **${p.项目名称}**
   - 延期天数：${p.延期天数}
   - 延期原因：${p.延期原因}
-  - 项目进度：${p.项目进度}
   - 项目负责人：${p.项目负责人}
 `).join('') : '暂无延期项目'}
 
@@ -1066,7 +1051,6 @@ ${delayedProjects.length > 0 ? delayedProjects.map(p => `
 ${riskTasks.length > 0 ? riskTasks.map(t => `
 - **${t.任务名称}**（所属项目：${t.所属项目}）
   - 风险描述：${t.风险描述}
-  - 任务进度：${t.任务进度}
   - 执行人员：${t.执行人员}
 `).join('') : '暂无风险任务'}
 
@@ -1075,7 +1059,6 @@ ${delayedTasks.length > 0 ? delayedTasks.map(t => `
 - **${t.任务名称}**（所属项目：${t.所属项目}）
   - 延期天数：${t.延期天数}
   - 延期原因：${t.延期原因}
-  - 任务进度：${t.任务进度}
   - 执行人员：${t.执行人员}
 `).join('') : '暂无延期任务'}
 `
