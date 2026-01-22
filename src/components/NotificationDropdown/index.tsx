@@ -12,8 +12,15 @@ interface NotificationDropdownProps {
 }
 
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notifications, unreadCount, onConfirm, onDelete }) => {
-  // 获取所有待处理的通知
-  const pendingNotifications = notifications.filter(n => n.status === 'pending')
+  // 获取所有通知，按创建时间倒序排列
+  const sortedNotifications = [...notifications].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+  
+  // 待处理通知
+  const pendingNotifications = sortedNotifications.filter(n => n.status === 'pending')
+  // 已确认通知
+  const confirmedNotifications = sortedNotifications.filter(n => n.status === 'confirmed')
   
   // 渲染下拉菜单内容
   const renderDropdownContent = () => {
@@ -62,6 +69,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notificatio
             }
           `}
         </style>
+        
+        {/* 待处理提醒 */}
         <div style={{
           padding: '12px 16px',
           fontWeight: '600',
@@ -76,14 +85,11 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notificatio
         </div>
         
         {pendingNotifications.length === 0 ? (
-          <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-            <Empty 
-              description="暂无待处理提醒" 
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
+          <div style={{ padding: '30px 20px', textAlign: 'center', color: '#999' }}>
+            暂无待处理提醒
           </div>
         ) : (
-          <div className="notification-list">
+          <div>
             {pendingNotifications.map(notification => (
               <NotificationItem
                 key={notification.id}
@@ -92,6 +98,42 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notificatio
                 onDelete={onDelete}
               />
             ))}
+          </div>
+        )}
+        
+        {/* 已确认提醒 */}
+        {confirmedNotifications.length > 0 && (
+          <>
+            <div style={{
+              padding: '12px 16px',
+              fontWeight: '500',
+              color: '#666',
+              borderBottom: '1px solid #f0f0f0',
+              background: '#f5f5f5',
+              marginTop: '8px'
+            }}>
+              已确认 ({confirmedNotifications.length})
+            </div>
+            <div>
+              {confirmedNotifications.map(notification => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onConfirm={onConfirm}
+                  onDelete={onDelete}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        
+        {/* 无任何通知 */}
+        {notifications.length === 0 && (
+          <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+            <Empty 
+              description="暂无提醒" 
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
           </div>
         )}
       </div>
