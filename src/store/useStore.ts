@@ -365,24 +365,58 @@ const useStore = create<AppState>((set, get) => {
     selectedStatus: [],
     
     setProjects: (projects) => {
-      const data = { projects, tasks: get().tasks, taskTypes: get().taskTypes, pmos: get().pmos, productManagers: get().productManagers, historyRecords: get().historyRecords }
-      applyAndPersist(data)
+      // 创建历史记录
+      const historyRecord = {
+        id: `history-${Date.now()}`,
+        entityType: 'project',
+        entityId: 'batch',
+        entityName: '项目列表',
+        operation: 'update',
+        operator: 'admin',
+        operatedAt: new Date().toISOString(),
+        changes: { projects: { from: get().projects, to: projects } }
+      }
+
+      const newHistoryRecords = [...get().historyRecords, historyRecord]
+      const data = {
+        projects,
+        tasks: get().tasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ projects, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     setTasks: (tasks) => {
-      const data = { projects: get().projects, tasks, taskTypes: get().taskTypes, pmos: get().pmos, productManagers: get().productManagers, historyRecords: get().historyRecords }
-      applyAndPersist(data)
+      // 创建历史记录
+      const historyRecord = {
+        id: `history-${Date.now()}`,
+        entityType: 'task',
+        entityId: 'batch',
+        entityName: '任务列表',
+        operation: 'update',
+        operator: 'admin',
+        operatedAt: new Date().toISOString(),
+        changes: { tasks: { from: get().tasks, to: tasks } }
+      }
+
+      const newHistoryRecords = [...get().historyRecords, historyRecord]
+      const data = {
+        projects: get().projects,
+        tasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ tasks, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     setTaskTypes: (taskTypes) => {
-      const data = { 
-        projects: get().projects, 
-        tasks: get().tasks, 
-        taskTypes, 
-        pmos: get().pmos, 
-        productManagers: get().productManagers,
-        historyRecords: get().historyRecords 
-      }
-      applyAndPersist(data)
-      get().addHistoryRecord({
+      // 创建历史记录
+      const historyRecord = {
         id: `history-${Date.now()}`,
         entityType: 'taskType',
         entityId: 'batch',
@@ -391,12 +425,23 @@ const useStore = create<AppState>((set, get) => {
         operator: 'admin',
         operatedAt: new Date().toISOString(),
         changes: { taskTypes: { from: get().taskTypes, to: taskTypes } }
-      })
+      }
+
+      const newHistoryRecords = [...get().historyRecords, historyRecord]
+      const data = {
+        projects: get().projects,
+        tasks: get().tasks,
+        taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ taskTypes, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     setPMOs: (pmos) => {
-      const data = { projects: get().projects, tasks: get().tasks, taskTypes: get().taskTypes, pmos, productManagers: get().productManagers, historyRecords: get().historyRecords }
-      applyAndPersist(data)
-      get().addHistoryRecord({
+      // 创建历史记录
+      const historyRecord = {
         id: `history-${Date.now()}`,
         entityType: 'pmo',
         entityId: 'batch',
@@ -405,12 +450,23 @@ const useStore = create<AppState>((set, get) => {
         operator: 'admin',
         operatedAt: new Date().toISOString(),
         changes: { pmos: { from: get().pmos, to: pmos } }
-      })
+      }
+
+      const newHistoryRecords = [...get().historyRecords, historyRecord]
+      const data = {
+        projects: get().projects,
+        tasks: get().tasks,
+        taskTypes: get().taskTypes,
+        pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ pmos, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     setProductManagers: (productManagers) => {
-      const data = { projects: get().projects, tasks: get().tasks, taskTypes: get().taskTypes, pmos: get().pmos, productManagers, historyRecords: get().historyRecords }
-      applyAndPersist(data)
-      get().addHistoryRecord({
+      // 创建历史记录
+      const historyRecord = {
         id: `history-${Date.now()}`,
         entityType: 'productManager',
         entityId: 'batch',
@@ -419,23 +475,26 @@ const useStore = create<AppState>((set, get) => {
         operator: 'admin',
         operatedAt: new Date().toISOString(),
         changes: { productManagers: { from: get().productManagers, to: productManagers } }
-      })
+      }
+
+      const newHistoryRecords = [...get().historyRecords, historyRecord]
+      const data = {
+        projects: get().projects,
+        tasks: get().tasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ productManagers, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     setSelectedProjectId: (projectId) => set({ selectedProjectId: projectId }),
     setSelectedStatus: (status) => set({ selectedStatus: status }),
     
     addProject: (project) => {
-      const newProjects = [...get().projects, project]
-      const data = { 
-        projects: newProjects, 
-        tasks: get().tasks, 
-        taskTypes: get().taskTypes, 
-        pmos: get().pmos, 
-        productManagers: get().productManagers,
-        historyRecords: get().historyRecords 
-      }
-      applyAndPersist(data)
-      get().addHistoryRecord({
+      // 先创建历史记录
+      const historyRecord = {
         id: `history-${Date.now()}`,
         entityType: 'project',
         entityId: project.id,
@@ -444,32 +503,39 @@ const useStore = create<AppState>((set, get) => {
         operator: 'admin',
         operatedAt: new Date().toISOString(),
         projectId: project.id
-      })
+      }
+      // 更新数据并保存（包含历史记录）
+      const newHistoryRecords = [...get().historyRecords, historyRecord]
+      const newProjects = [...get().projects, project]
+      const data = {
+        projects: newProjects,
+        tasks: get().tasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ projects: newProjects, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     updateProject: (projectId, updates) => {
       const project = get().projects.find(p => p.id === projectId)
       if (!project) return
-      
+
       const newProjects = get().projects.map((p) => (p.id === projectId ? { ...p, ...updates } : p))
-      const data = { 
-        projects: newProjects, 
-        tasks: get().tasks, 
-        taskTypes: get().taskTypes, 
-        pmos: get().pmos, 
-        productManagers: get().productManagers,
-        historyRecords: get().historyRecords 
-      }
-      applyAndPersist(data)
-      
+
+      // 计算变更内容
       const changes: Record<string, { from: unknown; to: unknown }> = {}
       Object.entries(updates).forEach(([key, value]) => {
         if (project[key as keyof Project] !== value) {
           changes[key] = { from: project[key as keyof Project], to: value }
         }
       })
-      
+
+      // 创建历史记录（如果有变更）
+      let newHistoryRecords = get().historyRecords
       if (Object.keys(changes).length > 0) {
-        get().addHistoryRecord({
+        const historyRecord = {
           id: `history-${Date.now()}`,
           entityType: 'project',
           entityId: projectId,
@@ -479,21 +545,25 @@ const useStore = create<AppState>((set, get) => {
           operatedAt: new Date().toISOString(),
           changes,
           projectId: projectId
-        })
+        }
+        newHistoryRecords = [...get().historyRecords, historyRecord]
       }
+
+      // 更新数据并保存（包含历史记录）
+      const data = {
+        projects: newProjects,
+        tasks: get().tasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ projects: newProjects, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     addTask: (task) => {
-      const newTasks = [...get().tasks, task]
-      const data = { 
-        projects: get().projects, 
-        tasks: newTasks, 
-        taskTypes: get().taskTypes, 
-        pmos: get().pmos, 
-        productManagers: get().productManagers,
-        historyRecords: get().historyRecords 
-      }
-      applyAndPersist(data)
-      get().addHistoryRecord({
+      // 创建历史记录
+      const historyRecord = {
         id: `history-${Date.now()}`,
         entityType: 'task',
         entityId: task.id,
@@ -502,43 +572,52 @@ const useStore = create<AppState>((set, get) => {
         operator: 'admin',
         operatedAt: new Date().toISOString(),
         projectId: task.projectId
-      })
+      }
+
+      const newHistoryRecords = [...get().historyRecords, historyRecord]
+      const newTasks = [...get().tasks, task]
+
+      // 更新数据并保存（包含历史记录）
+      const data = {
+        projects: get().projects,
+        tasks: newTasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ tasks: newTasks, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     updateTask: (taskId, updates) => {
       const task = get().tasks.find(t => t.id === taskId)
       if (!task) return
-      
+
       const newTasks = get().tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t))
-      const data = { 
-        projects: get().projects, 
-        tasks: newTasks, 
-        taskTypes: get().taskTypes, 
-        pmos: get().pmos, 
-        productManagers: get().productManagers,
-        historyRecords: get().historyRecords 
-      }
-      applyAndPersist(data)
-      
+
       // 需要排除的字段（不记录变更或不参与比较）
       const excludedFields = ['dailyRecords']
-      
+
+      // 计算变更内容
       const changes: Record<string, { from: unknown; to: unknown }> = {}
       Object.entries(updates).forEach(([key, value]) => {
         // 跳过不需要比较的字段
         if (excludedFields.includes(key)) return
-        
+
         const oldValue = task[key as keyof Task]
         // 使用 JSON.stringify 比较对象和数组，确保内容一致才认为无变化
         const oldValueStr = typeof oldValue === 'object' ? JSON.stringify(oldValue) : oldValue
         const newValueStr = typeof value === 'object' ? JSON.stringify(value) : value
-        
+
         if (oldValueStr !== newValueStr) {
           changes[key] = { from: oldValue, to: value }
         }
       })
-      
+
+      // 创建历史记录（如果有变更）
+      let newHistoryRecords = get().historyRecords
       if (Object.keys(changes).length > 0) {
-        get().addHistoryRecord({
+        const historyRecord = {
           id: `history-${Date.now()}`,
           entityType: 'task',
           entityId: taskId,
@@ -548,24 +627,28 @@ const useStore = create<AppState>((set, get) => {
           operatedAt: new Date().toISOString(),
           changes,
           projectId: task.projectId
-        })
+        }
+        newHistoryRecords = [...get().historyRecords, historyRecord]
       }
+
+      // 更新数据并保存（包含历史记录）
+      const data = {
+        projects: get().projects,
+        tasks: newTasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ tasks: newTasks, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     deleteTask: (taskId) => {
       const task = get().tasks.find(t => t.id === taskId)
       if (!task) return
-      
-      const newTasks = get().tasks.filter((t) => t.id !== taskId)
-      const data = { 
-        projects: get().projects, 
-        tasks: newTasks, 
-        taskTypes: get().taskTypes, 
-        pmos: get().pmos, 
-        productManagers: get().productManagers,
-        historyRecords: get().historyRecords 
-      }
-      applyAndPersist(data)
-      get().addHistoryRecord({
+
+      // 创建历史记录
+      const historyRecord = {
         id: `history-${Date.now()}`,
         entityType: 'task',
         entityId: taskId,
@@ -574,24 +657,29 @@ const useStore = create<AppState>((set, get) => {
         operator: 'admin',
         operatedAt: new Date().toISOString(),
         projectId: task.projectId
-      })
+      }
+
+      const newHistoryRecords = [...get().historyRecords, historyRecord]
+      const newTasks = get().tasks.filter((t) => t.id !== taskId)
+
+      // 更新数据并保存（包含历史记录）
+      const data = {
+        projects: get().projects,
+        tasks: newTasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ tasks: newTasks, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     deleteProject: (projectId) => {
       const project = get().projects.find(p => p.id === projectId)
       if (!project) return
-      
-      const newProjects = get().projects.filter(p => p.id !== projectId)
-      const newTasks = get().tasks.filter(t => t.projectId !== projectId)
-      const data = { 
-        projects: newProjects, 
-        tasks: newTasks, 
-        taskTypes: get().taskTypes, 
-        pmos: get().pmos, 
-        productManagers: get().productManagers,
-        historyRecords: get().historyRecords 
-      }
-      applyAndPersist(data)
-      get().addHistoryRecord({
+
+      // 创建历史记录
+      const historyRecord = {
         id: `history-${Date.now()}`,
         entityType: 'project',
         entityId: projectId,
@@ -600,7 +688,23 @@ const useStore = create<AppState>((set, get) => {
         operator: 'admin',
         operatedAt: new Date().toISOString(),
         projectId: projectId
-      })
+      }
+
+      const newHistoryRecords = [...get().historyRecords, historyRecord]
+      const newProjects = get().projects.filter(p => p.id !== projectId)
+      const newTasks = get().tasks.filter(t => t.projectId !== projectId)
+
+      // 更新数据并保存（包含历史记录）
+      const data = {
+        projects: newProjects,
+        tasks: newTasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: newHistoryRecords
+      }
+      set({ projects: newProjects, tasks: newTasks, historyRecords: newHistoryRecords })
+      saveToServer(data)
     },
     initializeData: () => {
       syncFromServer().then((serverData) => {
@@ -628,8 +732,16 @@ const useStore = create<AppState>((set, get) => {
       set(state => ({
         historyRecords: [...state.historyRecords, record]
       }))
-      // 注意：不在此处保存数据，避免重复保存
-      // 保存由调用方通过 applyAndPersist 统一处理
+      // 保存包含新历史记录的完整数据
+      const data = {
+        projects: get().projects,
+        tasks: get().tasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords: [...get().historyRecords, record]
+      }
+      saveToServer(data)
     },
     clearHistoryRecords: () => {
       set({ historyRecords: [] })
