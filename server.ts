@@ -3,8 +3,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getAllData, saveAllData } from "./src/api/dataApi.js";
-import { aiConfigManager } from "./src/storage/database/aiConfigManager.js";
-import { aiProviderManager } from "./src/storage/database/aiProviderManager.js";
+import { aiConfigManager } from "./src/storage/database/aiConfigManager.ts";
+import { aiProviderManager } from "./src/storage/database/aiProviderManager.ts";
 
 // 全局错误处理
 process.on('uncaughtException', (error) => {

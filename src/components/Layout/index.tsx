@@ -19,7 +19,7 @@ import AIAnalysisModal from '../AIAnalysisModal'
 import useAuthStore from '../../store/authStore'
 import useNotificationStore from '../../store/notificationStore'
 import useAIAnalysisStore from '../../store/aiStore'
-import { startReminderTimer, cleanupReminderTimer } from '../../utils/notificationUtils'
+import { startReminderTimer, cleanupReminderTimer, checkTasksAndTriggerReminders } from '../../utils/notificationUtils'
 import './index.css'
 
 const { Header, Sider, Content } = AntLayout
@@ -27,9 +27,10 @@ const { Header, Sider, Content } = AntLayout
 interface LoginFormProps {
   role: string
   onQuickAdmin: () => void
+  onLogin?: () => void
 }
 
-function LoginForm({ role, onQuickAdmin, onLogin }: LoginFormProps & { onLogin?: () => void }) {
+function LoginForm({ role, onQuickAdmin, onLogin }: LoginFormProps) {
   // 只有在非管理员身份时才需要表单
   if (role === 'admin') {
     return (
@@ -51,6 +52,8 @@ function LoginForm({ role, onQuickAdmin, onLogin }: LoginFormProps & { onLogin?:
       } else {
         message.error('账号或密码错误')
       }
+    }).catch((error) => {
+      console.log('表单验证失败:', error)
     })
   }
 
@@ -59,6 +62,7 @@ function LoginForm({ role, onQuickAdmin, onLogin }: LoginFormProps & { onLogin?:
       form={form}
       layout="vertical"
       initialValues={{ username: 'admin', password: 'admin' }}
+      onFinish={handleSubmit}
     >
       <Form.Item
         label="账号"
@@ -129,7 +133,6 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
     // 在控制台暴露调试函数
     (window as any).triggerNotifications = () => {
       console.log('[Debug] Manually triggering notification check...')
-      const { checkTasksAndTriggerReminders } = require('../../utils/notificationUtils')
       checkTasksAndTriggerReminders()
       return 'Notification check triggered. Check console for details.'
     }
