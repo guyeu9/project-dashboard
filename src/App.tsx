@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import CustomLayout from './components/Layout'
 import Dashboard from './pages/Dashboard'
@@ -8,8 +9,16 @@ import ProjectManagement from './pages/ProjectManagement'
 import SmartParserPage from './pages/SmartParser'
 import SettingsPage from './pages/Settings'
 import UserGuidePage from './pages/UserGuide'
+import useAIAnalysisStore from './store/aiStore'
 
 function App() {
+  const initializeAIStore = useAIAnalysisStore(state => state.initialize)
+
+  useEffect(() => {
+    // 初始化AI Store，从数据库加载配置
+    initializeAIStore()
+  }, [initializeAIStore])
+
   return (
     <BrowserRouter>
       <CustomLayout>

@@ -81,6 +81,31 @@ export const taskTypes = pgTable("task_types", {
 	index("task_types_name_idx").using("btree", table.name.asc().nullsLast().op("text_ops")),
 ]);
 
+export const aiConfigs = pgTable("ai_configs", {
+	id: varchar({ length: 36 }).primaryKey().notNull(),
+	key: varchar({ length: 100 }).notNull().unique(),
+	value: text().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+}, (table) => [
+	index("ai_configs_key_idx").using("btree", table.key.asc().nullsLast().op("text_ops")),
+]);
+
+export const aiProviders = pgTable("ai_providers", {
+	id: varchar({ length: 36 }).primaryKey().notNull(),
+	name: varchar({ length: 100 }).notNull(),
+	baseUrl: varchar("base_url", { length: 500 }).notNull(),
+	apiKey: varchar("api_key", { length: 500 }).notNull(),
+	model: varchar({ length: 100 }).notNull(),
+	type: varchar({ length: 20 }).notNull(),
+	enabled: boolean().default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+}, (table) => [
+	index("ai_providers_name_idx").using("btree", table.name.asc().nullsLast().op("text_ops")),
+	index("ai_providers_type_idx").using("btree", table.type.asc().nullsLast().op("text_ops")),
+]);
+
 export const tasks = pgTable("tasks", {
 	id: varchar({ length: 36 }).primaryKey().notNull(),
 	projectId: varchar("project_id", { length: 36 }).notNull(),
@@ -258,6 +283,50 @@ export const insertHistoryRecordSchema = createCoercedInsertSchema(historyRecord
   changes: true,
   projectId: true,
 });
+
+// AI Config Schemas
+export const insertAiConfigSchema = createCoercedInsertSchema(aiConfigs).pick({
+  id: true,
+  key: true,
+  value: true,
+});
+
+export const updateAiConfigSchema = createCoercedInsertSchema(aiConfigs)
+  .pick({
+    key: true,
+    value: true,
+  })
+  .partial();
+
+export type AIConfig = typeof aiConfigs.$inferSelect;
+export type InsertAIConfig = z.infer<typeof insertAiConfigSchema>;
+export type UpdateAIConfig = z.infer<typeof updateAiConfigSchema>;
+
+// AI Provider Schemas
+export const insertAiProviderSchema = createCoercedInsertSchema(aiProviders).pick({
+  id: true,
+  name: true,
+  baseUrl: true,
+  apiKey: true,
+  model: true,
+  type: true,
+  enabled: true,
+});
+
+export const updateAiProviderSchema = createCoercedInsertSchema(aiProviders)
+  .pick({
+    name: true,
+    baseUrl: true,
+    apiKey: true,
+    model: true,
+    type: true,
+    enabled: true,
+  })
+  .partial();
+
+export type AIProvider = typeof aiProviders.$inferSelect;
+export type InsertAIProvider = z.infer<typeof insertAiProviderSchema>;
+export type UpdateAIProvider = z.infer<typeof updateAiProviderSchema>;
 
 export const updateHistoryRecordSchema = createCoercedInsertSchema(historyRecords)
   .pick({

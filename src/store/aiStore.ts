@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { AIMessage, AIAnalysisContext, Project, Task } from '../types'
+import { aiConfigManager } from '../storage/database/aiConfigManager'
+import { aiProviderManager } from '../storage/database/aiProviderManager'
 
 // AI 服务提供商类型
 export type AIProviderType = 'gemini' | 'openai'
@@ -44,48 +46,87 @@ const DEFAULT_PROVIDERS: AIProvider[] = [
   }
 ]
 
-// 从 localStorage 加载配置
-function loadProvidersFromStorage(): AIProvider[] {
+// 从数据库加载系统提示词
+async function loadSystemPromptFromDB(): Promise<string> {
   try {
-    const saved = localStorage.getItem('ai-providers')
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      return Array.isArray(parsed) ? parsed : DEFAULT_PROVIDERS
+    const config = await aiConfigManager.getAIConfigByKey('system_prompt')
+    if (config) {
+      return config.value
     }
   } catch (error) {
-    console.error('Failed to load providers from storage:', error)
+    console.error('Failed to load system prompt from database:', error)
   }
+  return DEFAULT_SYSTEM_PROMPT
+}
+
+// 保存系统提示词到数据库
+async function saveSystemPromptToDB(prompt: string): Promise<void> {
+  try {
+    await aiConfigManager.upsertAIConfig('system_prompt', prompt)
+  } catch (error) {
+    console.error('Failed to save system prompt to database:', error)
+  }
+}
+
+// 从数据库加载AI提供商
+async function loadProvidersFromDB(): Promise<AIProvider[]> {
+  try {
+    const dbProviders = await aiProviderManager.getAIProviders()
+    if (dbProviders.length > 0) {
+      return dbProviders.map(p => ({
+        id: p.id,
+        name: p.name,
+        baseUrl: p.baseUrl,
+        apiKey: p.apiKey,
+        model: p.model,
+        type: p.type as AIProviderType,
+        enabled: p.enabled,
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load providers from database:', error)
+  }
+
+  // 如果数据库中没有数据，使用默认值并保存到数据库
+  try {
+    for (const provider of DEFAULT_PROVIDERS) {
+      await aiProviderManager.createAIProvider(provider)
+    }
+  } catch (error) {
+    console.error('Failed to save default providers to database:', error)
+  }
+
   return DEFAULT_PROVIDERS
 }
 
-// 保存配置到 localStorage
-function saveProvidersToStorage(providers: AIProvider[]): void {
+// 保存AI提供商到数据库
+async function saveProvidersToDB(providers: AIProvider[]): Promise<void> {
   try {
-    localStorage.setItem('ai-providers', JSON.stringify(providers))
+    await aiProviderManager.syncProviders(providers)
   } catch (error) {
-    console.error('Failed to save providers to storage:', error)
+    console.error('Failed to save providers to database:', error)
   }
 }
 
-// 从 localStorage 加载当前选中的提供商
-function loadCurrentProviderId(): string {
+// 从数据库加载当前选中的提供商ID
+async function loadCurrentProviderIdFromDB(): Promise<string> {
   try {
-    const saved = localStorage.getItem('ai-current-provider-id')
-    if (saved) {
-      return saved
+    const config = await aiConfigManager.getAIConfigByKey('current_provider_id')
+    if (config) {
+      return config.value
     }
   } catch (error) {
-    console.error('Failed to load current provider from storage:', error)
+    console.error('Failed to load current provider ID from database:', error)
   }
   return DEFAULT_PROVIDERS[0].id
 }
 
-// 保存当前选中的提供商到 localStorage
-function saveCurrentProviderId(providerId: string): void {
+// 保存当前选中的提供商ID到数据库
+async function saveCurrentProviderIdToDB(providerId: string): Promise<void> {
   try {
-    localStorage.setItem('ai-current-provider-id', providerId)
+    await aiConfigManager.upsertAIConfig('current_provider_id', providerId)
   } catch (error) {
-    console.error('Failed to save current provider to storage:', error)
+    console.error('Failed to save current provider ID to database:', error)
   }
 }
 
@@ -625,7 +666,7 @@ interface AIAnalysisState {
   providers: AIProvider[]
   currentProviderId: string
   promptClickCount: number
-  
+
   openModal: (context: AIAnalysisContext) => void
   closeModal: () => void
   addMessage: (message: AIMessage) => void
@@ -634,7 +675,7 @@ interface AIAnalysisState {
   setSystemPrompt: (prompt: string) => void
   analyzeProjects: (projects: Project[], tasks: Task[], context: AIAnalysisContext) => Promise<void>
   sendFollowUp: (question: string) => Promise<void>
-  
+
   // AI 服务提供商管理方法
   addProvider: (provider: Omit<AIProvider, 'id'>) => void
   updateProvider: (id: string, updates: Partial<AIProvider>) => void
@@ -642,6 +683,9 @@ interface AIAnalysisState {
   setCurrentProvider: (id: string) => void
   getCurrentProvider: () => AIProvider | undefined
   incrementPromptClickCount: () => void
+
+  // 初始化方法
+  initialize: () => Promise<void>
 }
 
 const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
@@ -650,9 +694,28 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
   context: null,
   loading: false,
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
-  providers: loadProvidersFromStorage(),
-  currentProviderId: loadCurrentProviderId(),
+  providers: DEFAULT_PROVIDERS,
+  currentProviderId: DEFAULT_PROVIDERS[0].id,
   promptClickCount: 0,
+
+  // 初始化函数 - 从数据库加载数据
+  initialize: async () => {
+    try {
+      const [systemPrompt, providers, currentProviderId] = await Promise.all([
+        loadSystemPromptFromDB(),
+        loadProvidersFromDB(),
+        loadCurrentProviderIdFromDB(),
+      ])
+
+      set({
+        systemPrompt,
+        providers,
+        currentProviderId,
+      })
+    } catch (error) {
+      console.error('Failed to initialize AI store:', error)
+    }
+  },
 
   openModal: (context) => {
     set({ modalVisible: true, context, messages: [] })
@@ -676,6 +739,7 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
 
   setSystemPrompt: (prompt) => {
     set({ systemPrompt: prompt })
+    saveSystemPromptToDB(prompt)
   },
 
   incrementPromptClickCount: () => {
@@ -768,7 +832,7 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
         id: `provider-${Date.now()}`
       }
       const newProviders = [...state.providers, newProvider]
-      saveProvidersToStorage(newProviders)
+      saveProvidersToDB(newProviders)
       return { providers: newProviders }
     })
   },
@@ -778,7 +842,7 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
       const newProviders = state.providers.map(p =>
         p.id === id ? { ...p, ...updates } : p
       )
-      saveProvidersToStorage(newProviders)
+      saveProvidersToDB(newProviders)
       return { providers: newProviders }
     })
   },
@@ -786,15 +850,15 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
   deleteProvider: (id) => {
     set((state) => {
       const newProviders = state.providers.filter(p => p.id !== id)
-      
+
       // 如果删除的是当前选中的提供商，切换到第一个可用的提供商
       let newCurrentProviderId = state.currentProviderId
       if (state.currentProviderId === id) {
         newCurrentProviderId = newProviders.length > 0 ? newProviders[0].id : ''
-        saveCurrentProviderId(newCurrentProviderId)
+        saveCurrentProviderIdToDB(newCurrentProviderId)
       }
-      
-      saveProvidersToStorage(newProviders)
+
+      saveProvidersToDB(newProviders)
       return { providers: newProviders, currentProviderId: newCurrentProviderId }
     })
   },
@@ -803,7 +867,7 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
     set((state) => {
       const provider = state.providers.find(p => p.id === id)
       if (provider) {
-        saveCurrentProviderId(id)
+        saveCurrentProviderIdToDB(id)
         return { currentProviderId: id }
       }
       return state
