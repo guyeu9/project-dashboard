@@ -406,7 +406,8 @@ function ProjectManagement() {
           <div className="col-name">{project.name}</div>
           <div className="col-owner">{project.owner}</div>
           <div className="col-date">
-            {dayjs(project.startDate).format('YYYY-MM-DD')}
+            <div className="date-start">{dayjs(project.startDate).format('YYYY-MM-DD')}</div>
+            <div className="date-end">{dayjs(project.endDate).format('YYYY-MM-DD')}</div>
           </div>
           <div className="col-devs">
             <Space size={4}>

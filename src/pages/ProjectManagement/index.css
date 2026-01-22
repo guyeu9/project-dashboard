@@ -196,7 +196,7 @@
 
   .list-header-v3 {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 1.2fr 0.8fr 1.2fr;
+    grid-template-columns: 1.5fr 1fr 1.4fr 1.5fr 1.2fr 0.8fr 1.2fr;
     gap: 16px;
     padding: 16px 24px;
     background: var(--neutral-bg-layout);
@@ -208,10 +208,10 @@
 
   .list-item-v3 {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 1.2fr 0.8fr 1.2fr;
+    grid-template-columns: 1.5fr 1fr 1.4fr 1.5fr 1.2fr 0.8fr 1.2fr;
     gap: 16px;
     padding: 20px 24px;
-    align-items: center;
+    align-items: flex-start;
     border-bottom: 1px solid var(--neutral-border);
     cursor: pointer;
     transition: all 0.2s ease;
@@ -231,17 +231,36 @@
       font-weight: 700;
       color: var(--neutral-title);
       font-size: 15px;
+      display: flex;
+      align-items: center;
+      height: 100%;
     }
 
     .col-owner {
       color: var(--neutral-text);
       font-weight: 500;
+      display: flex;
+      align-items: center;
+      height: 100%;
     }
 
     .col-date {
       color: var(--neutral-secondary);
       font-family: monospace;
       font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .date-start,
+      .date-end {
+        line-height: 1.4;
+      }
+
+      .date-end {
+        color: var(--neutral-text);
+        font-weight: 500;
+      }
     }
 
     .btn-purple-mini {
