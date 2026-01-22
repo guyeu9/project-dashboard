@@ -43,14 +43,12 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask,
         fixed: 'left' as const,
         render: (_: string, record: Task) => {
           const taskTypeName = record.type?.name || ''
-          const startDate = dayjs(record.startDate).format('YYYY.MM.DD')
-          const endDate = dayjs(record.endDate).format('YYYY.MM.DD')
-          const dateRange = `${startDate}-${endDate}`
+          const taskName = record.name || ''
 
           return (
             <div className="task-info-cell">
               <span className="task-type-name">{taskTypeName}</span>
-              <span className="task-date-range">{dateRange}</span>
+              <span className="task-name">{taskName}</span>
             </div>
           )
         },
@@ -79,7 +77,8 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask,
           const endDate = dayjs(record.endDate).format('YYYY.MM.DD')
           return (
             <div className="task-period-cell">
-              {startDate}-{endDate}
+              <div className="period-start">{startDate}-</div>
+              <div className="period-end">{endDate}</div>
             </div>
           )
         },

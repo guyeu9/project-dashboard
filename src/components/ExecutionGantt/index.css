@@ -35,8 +35,8 @@
   flex-shrink: 0;
 }
 
-.task-date-range {
-  font-size: 11px;
+.task-name {
+  font-size: 12px;
   color: rgba(0, 0, 0, 0.65);
   white-space: nowrap;
   overflow: hidden;
@@ -52,11 +52,18 @@
 .task-period-cell {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   font-size: 12px;
   color: rgba(0, 0, 0, 0.65);
   line-height: 1.5;
-  word-break: break-all;
+}
+
+.period-start {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.period-end {
+  color: rgba(0, 0, 0, 0.65);
 }
 
 .date-column {
