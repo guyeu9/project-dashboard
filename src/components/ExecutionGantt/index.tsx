@@ -56,15 +56,15 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask,
         title: '负责人',
         dataIndex: 'assignees',
         key: 'assignees',
-        width: 120,
+        width: 200,
         render: (assignees: string[]) => (
-          <Avatar.Group max={{ count: 2 }} size="small">
+          <Space size={4} wrap>
             {assignees.map((name, index) => (
-              <Avatar key={index} style={{ backgroundColor: '#87d068' }}>
-                {name.charAt(0)}
-              </Avatar>
+              <Tag key={index} color="blue" style={{ margin: 0 }}>
+                {name}
+              </Tag>
             ))}
-          </Avatar.Group>
+          </Space>
         ),
       },
       {

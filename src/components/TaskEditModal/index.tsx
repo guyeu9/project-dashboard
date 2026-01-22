@@ -275,9 +275,9 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
         {isEditMode && task && (
           <>
             <Divider orientation="left">每日进度管理</Divider>
-            <DailyProgressManager 
-              task={task} 
-              project={project || { developers: MOCK_DEVELOPERS, testers: MOCK_TESTERS }} 
+            <DailyProgressManager
+              task={task}
+              project={project || { developers: [], testers: [] }}
               onUpdate={handleUpdateRecords}
               isAdmin={isAdmin}
             />
