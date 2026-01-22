@@ -124,6 +124,24 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
     return () => cleanupReminderTimer(timerId)
   }, [])
 
+  // 添加调试工具
+  useEffect(() => {
+    // 在控制台暴露调试函数
+    (window as any).triggerNotifications = () => {
+      console.log('[Debug] Manually triggering notification check...')
+      const { checkTasksAndTriggerReminders } = require('../../utils/notificationUtils')
+      checkTasksAndTriggerReminders()
+      return 'Notification check triggered. Check console for details.'
+    }
+    
+    console.log('[Debug] Notification debugging tools loaded:')
+    console.log('  - window.triggerNotifications() - Manually trigger notification check')
+    
+    return () => {
+      delete (window as any).triggerNotifications
+    }
+  }, [])
+
   useEffect(() => {
     initFromCookie()
   }, [initFromCookie])
