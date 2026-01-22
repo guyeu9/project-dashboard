@@ -18,4 +18,24 @@ export default defineConfig({
     port: 5000,
     host: true,
   },
+  optimizeDeps: {
+    exclude: [
+      'coze-coding-dev-sdk',
+      'pg',
+      'drizzle-orm',
+      /src\/storage\/database/,
+      /src\/api\/dataApi/
+    ],
+  },
+  build: {
+    rollupOptions: {
+      external: [
+        'coze-coding-dev-sdk',
+        'pg',
+        'drizzle-orm',
+        /src\/storage\/database/,
+        /src\/api\/dataApi/
+      ],
+    },
+  },
 })
