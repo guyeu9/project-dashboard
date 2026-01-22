@@ -48,3 +48,29 @@
 ## External Dependencies
 - **Ant Design Icons**: 图标支持
 - **Lucide React**: 辅助图标
+
+## Latest Updates (2026-01-22)
+
+### New Features
+- 任务通知系统：支持任务开始前一天及当天早上9点的双重提醒
+- 管理员登录功能：支持游客模式和管理员模式切换
+- AI配置持久化：AI配置保存到数据库，避免重新部署后丢失
+- 项目状态管理：新增"暂停"状态，灵活控制项目显示
+- 历史操作记录：自动记录所有增删改操作
+
+### Bug Fixes
+- 修复任务通知日期比较逻辑（任务开始日期包含时间信息）
+- 修复管理员登录按钮点击无反应问题
+- 修复历史记录保存逻辑
+
+### Enhancements
+- 添加通知调试工具（浏览器控制台和Dashboard页面）
+- 完善文档说明（README.md 全面更新）
+- 优化代码验证流程
+
+### Environment Specifics
+- **Package Manager**: 强制使用 pnpm，禁止使用 npm 或 yarn
+- **Database**: PostgreSQL (生产环境)
+- **ORM**: Drizzle ORM
+- **Backend Runtime**: tsx (TypeScript 直接执行)
+- **Frontend-Backend Separation**: 前端通过 API 调用后端服务，避免直接依赖后端库
