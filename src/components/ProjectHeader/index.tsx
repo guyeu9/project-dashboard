@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { Card, Row, Col, Tag, Input, Space, Modal, Button, Select, App as AntApp, DatePicker } from 'antd'
-import { 
-  EditOutlined, 
-  LinkOutlined, 
-  UserOutlined, 
-  TeamOutlined, 
-  FileTextOutlined, 
-  FlagOutlined, 
+import {
+  EditOutlined,
+  LinkOutlined,
+  UserOutlined,
+  TeamOutlined,
+  FileTextOutlined,
+  FlagOutlined,
   CalendarOutlined,
   ArrowLeftOutlined
 } from '@ant-design/icons'
 import { Project } from '../../types'
+import useStore from '../../store/useStore'
 import './index.css'
 
 const { Option } = Select
@@ -25,12 +26,27 @@ interface ProjectHeaderProps {
 
 function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHeaderProps) {
   const { message } = AntApp.useApp()
+  const { pmos, productManagers } = useStore()
   const [editingName, setEditingName] = useState(false)
   const [projectName, setProjectName] = useState(project.name)
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string | Date>('')
   const [remarkModalVisible, setRemarkModalVisible] = useState(false)
   const [remark, setRemark] = useState(project.remark || '')
+
+  // 根据 ID 获取 PMO 真实名称
+  const getPMOName = (pmoId: string | null | undefined): string => {
+    if (!pmoId) return '未设置'
+    const pmo = pmos.find(p => p.id === pmoId)
+    return pmo?.name || pmoId
+  }
+
+  // 根据 ID 获取 ProductManager 真实名称
+  const getProductManagerName = (pmId: string | null | undefined): string => {
+    if (!pmId) return '未设置'
+    const pm = productManagers.find(p => p.id === pmId)
+    return pm?.name || pmId
+  }
 
   const handleNameEdit = () => {
     if (!isAdmin) {
@@ -204,12 +220,18 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
             <div className="info-value">
               {editingField === 'productManager' ? (
                 <Space>
-                  <Input
+                  <Select
                     value={editValue as string}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    placeholder="请输入产品经理"
-                    style={{ width: '100%' }}
-                  />
+                    onChange={(value) => setEditValue(value)}
+                    placeholder="请选择产品经理"
+                    style={{ width: 200 }}
+                    allowClear
+                    showSearch
+                  >
+                    {productManagers.filter(p => p.enabled).map(p => (
+                      <Option key={p.id} value={p.id}>{p.name}</Option>
+                    ))}
+                  </Select>
                   <Button type="primary" size="small" onClick={handleFieldSave}>
                     保存
                   </Button>
@@ -222,7 +244,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
                   onClick={() => isAdmin && handleFieldEdit('productManager', project.productManager || '')}
                   style={{ cursor: isAdmin ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
                 >
-                  <Tag color="geekblue">{project.productManager || '未设置'}</Tag>
+                  <Tag color="geekblue">{getProductManagerName(project.productManager)}</Tag>
                   {isAdmin && (
                     <Button type="link" size="small" icon={<EditOutlined />}>
                       编辑
@@ -242,12 +264,18 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
             <div className="info-value">
               {editingField === 'pmo' ? (
                 <Space>
-                  <Input
+                  <Select
                     value={editValue as string}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    placeholder="请输入 PMO"
-                    style={{ width: '100%' }}
-                  />
+                    onChange={(value) => setEditValue(value)}
+                    placeholder="请选择 PMO"
+                    style={{ width: 200 }}
+                    allowClear
+                    showSearch
+                  >
+                    {pmos.filter(p => p.enabled).map(p => (
+                      <Option key={p.id} value={p.id}>{p.name}</Option>
+                    ))}
+                  </Select>
                   <Button type="primary" size="small" onClick={handleFieldSave}>
                     保存
                   </Button>
@@ -256,11 +284,11 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
                   </Button>
                 </Space>
               ) : (
-                <div 
-                  onClick={() => isAdmin && handleFieldEdit('pmo', project.pmo || '')} 
+                <div
+                  onClick={() => isAdmin && handleFieldEdit('pmo', project.pmo || '')}
                   style={{ cursor: isAdmin ? 'pointer' : 'default', display: 'flex', alignItems: 'center' }}
                 >
-                  <Tag color="cyan">{project.pmo || '未设置'}</Tag>
+                  <Tag color="cyan">{getPMOName(project.pmo)}</Tag>
                   {isAdmin && (
                     <Button type="link" size="small" icon={<EditOutlined />}>
                       编辑
