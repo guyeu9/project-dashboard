@@ -8,10 +8,6 @@ const { TextArea } = Input
 const { Option } = Select
 const { Text } = Typography
 
-// 模拟人员数据
-const MOCK_DEVELOPERS = ['张三', '李四', '王靖博', '邓晓旭', '陈七', '周八', '孙十一', '李十三']
-const MOCK_TESTERS = ['王五', '赵六', '史宁博', '吴九', '郑十', '钱十二', '王十四']
-
 interface TaskEditModalProps {
   visible: boolean
   task: Task | null
@@ -112,12 +108,26 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
     if (!taskType) return []
 
     const typeName = taskType.name
+
+    // 优先使用项目中的真实人员列表
     if (typeName.includes('开发')) {
-      return MOCK_DEVELOPERS
+      return project?.developers || []
     } else if (typeName.includes('测试')) {
-      return MOCK_TESTERS
+      return project?.testers || []
+    } else if (typeName.includes('产品') || typeName.includes('UAT')) {
+      return project?.productManager ? [project.productManager] : []
+    } else if (typeName.includes('上线') || typeName.includes('部署') || typeName.includes('发布')) {
+      return project?.pmo ? [project.pmo] : []
     }
-    return [...MOCK_DEVELOPERS, ...MOCK_TESTERS] // 默认显示全部
+
+    // 默认返回项目中所有人员
+    const allPersonnel = [
+      ...(project?.developers || []),
+      ...(project?.testers || []),
+    ]
+    if (project?.productManager) allPersonnel.push(project.productManager)
+    if (project?.pmo) allPersonnel.push(project.pmo)
+    return allPersonnel
   }
 
   const personnelLabel = () => {
@@ -231,11 +241,11 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
             <Form.Item
               label={personnelLabel()}
               name="assignees"
-              extra={<Text type="secondary" style={{ fontSize: '12px' }}>根据任务类型自动匹配候选人</Text>}
+              extra={<Text type="secondary" style={{ fontSize: '12px' }}>根据任务类型自动匹配候选人，也可自由输入</Text>}
             >
               <Select
-                mode="multiple"
-                placeholder={`请选择${personnelLabel()}`}
+                mode="tags"
+                placeholder={`请选择或输入${personnelLabel()}`}
                 style={{ width: '100%' }}
                 allowClear
                 disabled={!isAdmin}
