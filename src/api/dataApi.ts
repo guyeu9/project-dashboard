@@ -53,7 +53,7 @@ export async function getAllData() {
   }
 }
 
-// 手动转换日期字符串为 Date 对象
+// 手动转换日期字符串为 ISO 格式
 function normalizeDates(obj: any, dateFields: string[]): any {
   if (!obj || typeof obj !== 'object') return obj;
 
@@ -61,8 +61,22 @@ function normalizeDates(obj: any, dateFields: string[]): any {
 
   for (const field of dateFields) {
     if (result[field] && typeof result[field] === 'string') {
-      console.log(`[normalizeDates] 转换字段 ${field}:`, result[field], '->', new Date(result[field]));
-      result[field] = new Date(result[field]);
+      // 如果是 'YYYY-MM-DD' 格式，转换为 ISO 格式
+      const dateStr = result[field];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        // 使用 UTC 时间，避免时区问题
+        const [year, month, day] = dateStr.split('-').map(Number)
+        result[field] = new Date(Date.UTC(year, month - 1, day)).toISOString()
+      } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}T/)) {
+        // 已经是 ISO 格式，不需要转换
+        result[field] = dateStr
+      } else {
+        // 尝试使用浏览器默认解析
+        const parsed = new Date(dateStr)
+        if (!isNaN(parsed.getTime())) {
+          result[field] = parsed.toISOString()
+        }
+      }
     }
   }
 
@@ -79,23 +93,13 @@ export async function saveAllData(data: {
   historyRecords?: any[];
 }) {
   try {
-    console.log('[saveAllData] 开始保存数据');
-    console.log('[saveAllData] 项目数:', data.projects?.length, '任务数:', data.tasks?.length);
-
-    if (data.projects?.[0]) {
-      console.log('[saveAllData] 第一个项目:', JSON.stringify(data.projects[0], null, 2).substring(0, 500));
-      console.log('[saveAllData] startDate 类型:', typeof data.projects[0].startDate);
-      console.log('[saveAllData] endDate 类型:', typeof data.projects[0].endDate);
-    }
+    console.log('[saveAllData] 开始保存数据，项目数:', data.projects?.length, '任务数:', data.tasks?.length);
 
     const db = await getDb();
 
     // 使用事务确保数据一致性
     await db.transaction(async (tx) => {
-      console.log('[saveAllData] 开始事务');
-
-      // 清空现有数据
-      console.log('[saveAllData] 清空现有数据');
+      console.log('[saveAllData] 开始事务，清空现有数据');
       await tx.delete(tasks as any);
       await tx.delete(projects as any);
       await tx.delete(taskTypes as any);
@@ -104,51 +108,30 @@ export async function saveAllData(data: {
 
       // 插入新数据 - 直接插入，跳过 schema 验证
       if (data.projects && data.projects.length > 0) {
-        console.log('[saveAllData] 准备插入项目数据');
-        const normalizedProjects = data.projects.map((project, index) => {
-          console.log(`[saveAllData] 处理项目 ${index}:`, project.name);
-          const normalized = normalizeDates(project, ['startDate', 'endDate']);
-          console.log(`[saveAllData] 项目 ${index} 转换后的日期:`, {
-            startDate: normalized.startDate,
-            startDateType: typeof normalized.startDate,
-            endDate: normalized.endDate,
-            endDateType: typeof normalized.endDate
-          });
-          return normalized;
-        });
-        console.log('[saveAllData] 执行插入项目');
+        const normalizedProjects = data.projects.map((project) =>
+          normalizeDates(project, ['startDate', 'endDate'])
+        );
         await tx.insert(projects as any).values(normalizedProjects as any);
-        console.log('[saveAllData] 项目插入成功');
       }
 
       if (data.tasks && data.tasks.length > 0) {
-        console.log('[saveAllData] 准备插入任务数据');
         const normalizedTasks = data.tasks.map((task) =>
           normalizeDates(task, ['startDate', 'endDate'])
         );
         await tx.insert(tasks as any).values(normalizedTasks as any);
-        console.log('[saveAllData] 任务插入成功');
       }
 
       if (data.taskTypes && data.taskTypes.length > 0) {
-        console.log('[saveAllData] 准备插入任务类型数据');
         await tx.insert(taskTypes as any).values(data.taskTypes as any);
-        console.log('[saveAllData] 任务类型插入成功');
       }
 
       if (data.pmos && data.pmos.length > 0) {
-        console.log('[saveAllData] 准备插入 PMO 数据');
         await tx.insert(pmos as any).values(data.pmos as any);
-        console.log('[saveAllData] PMO 插入成功');
       }
 
       if (data.productManagers && data.productManagers.length > 0) {
-        console.log('[saveAllData] 准备插入产品经理数据');
         await tx.insert(productManagers as any).values(data.productManagers as any);
-        console.log('[saveAllData] 产品经理插入成功');
       }
-
-      console.log('[saveAllData] 事务提交');
     });
 
     console.log("[INFO] 数据保存成功");

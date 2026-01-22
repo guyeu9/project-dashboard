@@ -24,36 +24,46 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
   const [form] = Form.useForm()
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedTypeId, setSelectedTypeId] = useState<string>(task?.type.id || taskTypes[0]?.id || '')
+  const initializedRef = useState(false)
 
   useEffect(() => {
-    setIsEditMode(!!task)
-    if (task) {
-      const taskTypeId = task.type.id
-      setSelectedTypeId(taskTypeId)
-      form.setFieldsValue({
-        name: task.name,
-        type: taskTypeId,
-        status: task.status,
-        progress: task.progress,
-        startDate: dayjs(task.startDate),
-        endDate: dayjs(task.endDate),
-        assignees: task.assignees,
-        remark: task.remark || '',
-      })
-    } else {
-      // 新增任务模式，重置表单
-      form.resetFields()
-      const defaultTypeId = taskTypes[0]?.id || ''
-      setSelectedTypeId(defaultTypeId)
-      // 重置后设置默认值
-      form.setFieldsValue({
-        type: defaultTypeId,
-        status: 'normal',
-        progress: 0,
-        assignees: [],
-      })
+    // 只在 modal 可见且初始化标志为 false 时执行
+    if (!visible) {
+      initializedRef[1](false)
+      return
     }
-  }, [task, form, taskTypes])
+
+    if (!initializedRef[0]) {
+      setIsEditMode(!!task)
+      if (task) {
+        const taskTypeId = task.type.id
+        setSelectedTypeId(taskTypeId)
+        form.setFieldsValue({
+          name: task.name,
+          type: taskTypeId,
+          status: task.status,
+          progress: task.progress,
+          startDate: dayjs(task.startDate),
+          endDate: dayjs(task.endDate),
+          assignees: task.assignees,
+          remark: task.remark || '',
+        })
+      } else {
+        // 新增任务模式，重置表单
+        form.resetFields()
+        const defaultTypeId = taskTypes[0]?.id || ''
+        setSelectedTypeId(defaultTypeId)
+        // 重置后设置默认值
+        form.setFieldsValue({
+          type: defaultTypeId,
+          status: 'normal',
+          progress: 0,
+          assignees: [],
+        })
+      }
+      initializedRef[1](true)
+    }
+  }, [task, visible, form, initializedRef])
 
   // 监听表单中type字段的变化，更新selectedTypeId
   const handleTypeChange = (value: string) => {
@@ -68,6 +78,11 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
       const selectedTaskType = taskTypes.find(type => type.id === values.type)
       if (!selectedTaskType) {
         throw new Error('Invalid task type')
+      }
+
+      // 确保日期值存在
+      if (!values.startDate || !values.endDate) {
+        throw new Error('开始日期和结束日期不能为空')
       }
 
       const updates = {
@@ -93,6 +108,8 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
         onAdd(newTask)
       }
       form.resetFields()
+    }).catch((error) => {
+      console.error('[TaskEditModal] 表单验证失败:', error)
     })
   }
 
