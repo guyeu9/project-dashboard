@@ -41,12 +41,17 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
         remark: task.remark || '',
       })
     } else {
+      // 新增任务模式，重置表单
+      form.resetFields()
       const defaultTypeId = taskTypes[0]?.id || ''
       setSelectedTypeId(defaultTypeId)
+      // 重置后设置默认值
       form.setFieldsValue({
-        type: defaultTypeId
+        type: defaultTypeId,
+        status: 'normal',
+        progress: 0,
+        assignees: [],
       })
-      form.resetFields()
     }
   }, [task, form, taskTypes])
 
@@ -168,6 +173,7 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
             <Form.Item
               label="任务名称"
               name="name"
+              rules={[{ required: true, message: '请输入任务名称' }]}
             >
               <Input placeholder="请输入任务名称" disabled={!isAdmin} />
             </Form.Item>
