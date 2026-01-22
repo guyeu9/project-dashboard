@@ -60,7 +60,13 @@ function normalizeDates(obj: any, dateFields: string[]): any {
   const result = { ...obj };
 
   for (const field of dateFields) {
-    if (result[field] && typeof result[field] === 'string') {
+    // 如果字段不存在或为空，保持为 null
+    if (!result[field]) {
+      result[field] = null;
+      continue;
+    }
+
+    if (typeof result[field] === 'string') {
       // 如果是 'YYYY-MM-DD' 格式，转换为 ISO 格式
       const dateStr = result[field];
       if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -75,8 +81,16 @@ function normalizeDates(obj: any, dateFields: string[]): any {
         const parsed = new Date(dateStr)
         if (!isNaN(parsed.getTime())) {
           result[field] = parsed.toISOString()
+        } else {
+          result[field] = null;
         }
       }
+    } else if (result[field] instanceof Date) {
+      // 如果已经是 Date 对象，转换为 ISO 字符串
+      result[field] = result[field].toISOString();
+    } else {
+      // 其他类型，设置为 null
+      result[field] = null;
     }
   }
 
@@ -115,9 +129,24 @@ export async function saveAllData(data: {
       }
 
       if (data.tasks && data.tasks.length > 0) {
-        const normalizedTasks = data.tasks.map((task) =>
-          normalizeDates(task, ['startDate', 'endDate'])
-        );
+        const normalizedTasks = data.tasks.map((task, index) => {
+          const normalized = normalizeDates(task, ['startDate', 'endDate']);
+          // 确保所有字段都存在，避免 SQL 参数不匹配
+          return {
+            id: normalized.id || `task-${Date.now()}-${index}`,
+            projectId: normalized.projectId || '',
+            name: normalized.name || '',
+            type: normalized.type || {},
+            status: normalized.status || 'pending',
+            progress: normalized.progress || 0,
+            startDate: normalized.startDate || null,
+            endDate: normalized.endDate || null,
+            assignees: Array.isArray(normalized.assignees) ? normalized.assignees : [],
+            dailyProgress: normalized.dailyProgress || '',
+            remark: normalized.remark || '',
+            dailyRecords: Array.isArray(normalized.dailyRecords) ? normalized.dailyRecords : [],
+          };
+        });
         await tx.insert(tasks as any).values(normalizedTasks as any);
       }
 

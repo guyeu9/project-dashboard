@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Modal, Form, Input, Select, InputNumber, DatePicker, Row, Col, Typography, Divider } from 'antd'
+import { Modal, Form, Input, Select, InputNumber, DatePicker, Row, Col, Typography, Divider, App } from 'antd'
 import { Task, TaskType, Project } from '../../types'
 import dayjs from 'dayjs'
 import DailyProgressManager from '../DailyProgressManager'
@@ -21,6 +21,7 @@ interface TaskEditModalProps {
 }
 
 function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin = true, onSave, onAdd, onCancel }: TaskEditModalProps) {
+  const { message } = App.useApp()
   const [form] = Form.useForm()
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedTypeId, setSelectedTypeId] = useState<string>(task?.type.id || taskTypes[0]?.id || '')
@@ -82,7 +83,8 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
 
       // 确保日期值存在
       if (!values.startDate || !values.endDate) {
-        throw new Error('开始日期和结束日期不能为空')
+        message.error('开始日期和结束日期不能为空')
+        return
       }
 
       const updates = {
@@ -110,6 +112,7 @@ function TaskEditModal({ visible, task, taskTypes, project, projectId, isAdmin =
       form.resetFields()
     }).catch((error) => {
       console.error('[TaskEditModal] 表单验证失败:', error)
+      message.error('请填写完整的任务信息')
     })
   }
 
