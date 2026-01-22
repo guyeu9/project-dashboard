@@ -1,7 +1,5 @@
 import { create } from 'zustand'
 import { AIMessage, AIAnalysisContext, Project, Task } from '../types'
-import { aiConfigManager } from '../storage/database/aiConfigManager'
-import { aiProviderManager } from '../storage/database/aiProviderManager'
 
 // AI 服务提供商类型
 export type AIProviderType = 'gemini' | 'openai'
@@ -46,11 +44,38 @@ const DEFAULT_PROVIDERS: AIProvider[] = [
   }
 ]
 
+// API 基础 URL
+const API_BASE_URL = '/api'
+
+// 辅助函数：GET 请求
+async function apiGet(path: string): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}${path}`)
+  if (!response.ok) {
+    throw new Error(`API GET ${path} failed: ${response.status}`)
+  }
+  return response.json()
+}
+
+// 辅助函数：POST 请求
+async function apiPost(path: string, data: any): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) {
+    throw new Error(`API POST ${path} failed: ${response.status}`)
+  }
+  return response.json()
+}
+
 // 从数据库加载系统提示词
 async function loadSystemPromptFromDB(): Promise<string> {
   try {
-    const config = await aiConfigManager.getAIConfigByKey('system_prompt')
-    if (config) {
+    const config = await apiGet('/ai/config?key=system_prompt')
+    if (config && config.value) {
       return config.value
     }
   } catch (error) {
@@ -62,7 +87,7 @@ async function loadSystemPromptFromDB(): Promise<string> {
 // 保存系统提示词到数据库
 async function saveSystemPromptToDB(prompt: string): Promise<void> {
   try {
-    await aiConfigManager.upsertAIConfig('system_prompt', prompt)
+    await apiPost('/ai/config', { key: 'system_prompt', value: prompt })
   } catch (error) {
     console.error('Failed to save system prompt to database:', error)
   }
@@ -71,8 +96,8 @@ async function saveSystemPromptToDB(prompt: string): Promise<void> {
 // 从数据库加载AI提供商
 async function loadProvidersFromDB(): Promise<AIProvider[]> {
   try {
-    const dbProviders = await aiProviderManager.getAIProviders()
-    if (dbProviders.length > 0) {
+    const dbProviders = await apiGet('/ai/providers')
+    if (dbProviders && dbProviders.length > 0) {
       return dbProviders.map(p => ({
         id: p.id,
         name: p.name,
@@ -90,7 +115,7 @@ async function loadProvidersFromDB(): Promise<AIProvider[]> {
   // 如果数据库中没有数据，使用默认值并保存到数据库
   try {
     for (const provider of DEFAULT_PROVIDERS) {
-      await aiProviderManager.createAIProvider(provider)
+      await apiPost('/ai/providers', provider)
     }
   } catch (error) {
     console.error('Failed to save default providers to database:', error)
@@ -102,7 +127,7 @@ async function loadProvidersFromDB(): Promise<AIProvider[]> {
 // 保存AI提供商到数据库
 async function saveProvidersToDB(providers: AIProvider[]): Promise<void> {
   try {
-    await aiProviderManager.syncProviders(providers)
+    await apiPost('/ai/providers', { action: 'sync', providers })
   } catch (error) {
     console.error('Failed to save providers to database:', error)
   }
@@ -111,8 +136,8 @@ async function saveProvidersToDB(providers: AIProvider[]): Promise<void> {
 // 从数据库加载当前选中的提供商ID
 async function loadCurrentProviderIdFromDB(): Promise<string> {
   try {
-    const config = await aiConfigManager.getAIConfigByKey('current_provider_id')
-    if (config) {
+    const config = await apiGet('/ai/config?key=current_provider_id')
+    if (config && config.value) {
       return config.value
     }
   } catch (error) {
@@ -124,7 +149,7 @@ async function loadCurrentProviderIdFromDB(): Promise<string> {
 // 保存当前选中的提供商ID到数据库
 async function saveCurrentProviderIdToDB(providerId: string): Promise<void> {
   try {
-    await aiConfigManager.upsertAIConfig('current_provider_id', providerId)
+    await apiPost('/ai/config', { key: 'current_provider_id', value: providerId })
   } catch (error) {
     console.error('Failed to save current provider ID to database:', error)
   }

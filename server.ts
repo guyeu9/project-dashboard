@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getAllData, saveAllData } from "./src/api/dataApi.js";
+import { aiConfigManager } from "./src/storage/database/aiConfigManager.js";
+import { aiProviderManager } from "./src/storage/database/aiProviderManager.js";
 
 // 全局错误处理
 process.on('uncaughtException', (error) => {
@@ -110,6 +112,127 @@ const serveStaticFile = (
 
 const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url || "/", `http://${req.headers.host}`);
+
+  // AI 配置 API
+  if (parsedUrl.pathname === "/api/ai/config") {
+    setCorsHeaders(res);
+
+    if (req.method === "OPTIONS") {
+      res.statusCode = 204;
+      res.end();
+      return;
+    }
+
+    if (req.method === "GET") {
+      try {
+        const url = new URL(req.url || "", `http://${req.headers.host}`);
+        const key = url.searchParams.get("key");
+
+        if (key) {
+          const config = await aiConfigManager.getAIConfigByKey(key);
+          sendJson(res, 200, config || { key, value: "" });
+        } else {
+          const configs = await aiConfigManager.getAIConfigs();
+          sendJson(res, 200, configs);
+        }
+        return;
+      } catch (error: any) {
+        console.error("[ERROR] GET /api/ai/config 失败:", error.message);
+        sendJson(res, 500, {
+          error: "INTERNAL_SERVER_ERROR",
+          message: "获取 AI 配置失败",
+          details: error.message,
+        });
+        return;
+      }
+    }
+
+    if (req.method === "POST") {
+      try {
+        const raw = await getRequestBody(req);
+        const parsed = JSON.parse(raw);
+
+        if (parsed.key && parsed.value !== undefined) {
+          const config = await aiConfigManager.upsertAIConfig(parsed.key, parsed.value);
+          sendJson(res, 200, config);
+        } else {
+          sendJson(res, 400, {
+            error: "BAD_REQUEST",
+            message: "缺少必要参数 key 或 value",
+          });
+        }
+        return;
+      } catch (error: any) {
+        console.error("[ERROR] POST /api/ai/config 失败:", error.message);
+        sendJson(res, 500, {
+          error: "INTERNAL_SERVER_ERROR",
+          message: "保存 AI 配置失败",
+          details: error.message,
+        });
+        return;
+      }
+    }
+
+    res.statusCode = 405;
+    res.end("Method Not Allowed");
+    return;
+  }
+
+  // AI 服务提供商 API
+  if (parsedUrl.pathname === "/api/ai/providers") {
+    setCorsHeaders(res);
+
+    if (req.method === "OPTIONS") {
+      res.statusCode = 204;
+      res.end();
+      return;
+    }
+
+    if (req.method === "GET") {
+      try {
+        const providers = await aiProviderManager.getAIProviders();
+        sendJson(res, 200, providers);
+        return;
+      } catch (error: any) {
+        console.error("[ERROR] GET /api/ai/providers 失败:", error.message);
+        sendJson(res, 500, {
+          error: "INTERNAL_SERVER_ERROR",
+          message: "获取 AI 服务提供商失败",
+          details: error.message,
+        });
+        return;
+      }
+    }
+
+    if (req.method === "POST") {
+      try {
+        const raw = await getRequestBody(req);
+        const parsed = JSON.parse(raw);
+
+        if (parsed.action === "sync") {
+          const providers = parsed.providers || [];
+          const result = await aiProviderManager.syncProviders(providers);
+          sendJson(res, 200, { success: true });
+        } else {
+          const provider = await aiProviderManager.createAIProvider(parsed);
+          sendJson(res, 200, provider);
+        }
+        return;
+      } catch (error: any) {
+        console.error("[ERROR] POST /api/ai/providers 失败:", error.message);
+        sendJson(res, 500, {
+          error: "INTERNAL_SERVER_ERROR",
+          message: "保存 AI 服务提供商失败",
+          details: error.message,
+        });
+        return;
+      }
+    }
+
+    res.statusCode = 405;
+    res.end("Method Not Allowed");
+    return;
+  }
 
   if (parsedUrl.pathname === "/api/data") {
     setCorsHeaders(res);
