@@ -58,22 +58,41 @@ export const checkTasksAndTriggerReminders = () => {
     return
   }
   
+  const currentTime = dayjs()
+  console.log(`[Notification] =========================================`)
+  console.log(`[Notification] Current time: ${currentTime.format('YYYY-MM-DD HH:mm:ss')}`)
+  console.log(`[Notification] Current date: ${currentTime.startOf('day').format('YYYY-MM-DD')}`)
+  console.log(`[Notification] Current hour: ${currentTime.hour()}, minute: ${currentTime.minute()}`)
   console.log(`[Notification] Checking ${tasks.length} tasks for reminders...`)
+  console.log(`[Notification] =========================================`)
   
   let newNotificationsCreated = 0
   
-  tasks.forEach(task => {
+  tasks.forEach((task, index) => {
     // 获取项目信息
     const project = projects.find(p => p.id === task.projectId)
     if (!project) {
-      console.log(`[Notification] Task ${task.id} has no associated project, skipping`)
+      console.log(`[Notification] Task ${index + 1} (${task.name}) has no associated project, skipping`)
       return
     }
     
+    const taskStartTime = dayjs(task.startDate)
+    console.log(`[Notification] Task ${index + 1}: ${task.name}`)
+    console.log(`[Notification]   - Start date: ${task.startDate} (parsed as: ${taskStartTime.format('YYYY-MM-DD HH:mm:ss')})`)
+    console.log(`[Notification]   - Project: ${project.name}`)
+    
     // 检查是否需要前一天提醒
-    if (shouldTriggerOneDayBeforeReminder(task)) {
-      const taskStartTime = dayjs(task.startDate).startOf('day')
-      const remindTime = taskStartTime.subtract(1, 'day').format('YYYY-MM-DD')
+    const oneDayBeforeResult = shouldTriggerOneDayBeforeReminder(task)
+    console.log(`[Notification]   - One day before reminder: ${oneDayBeforeResult}`)
+    
+    if (oneDayBeforeResult) {
+      const taskStartTimeDay = taskStartTime.startOf('day')
+      const remindTime = taskStartTimeDay.subtract(1, 'day').format('YYYY-MM-DD')
+      const oneDayBefore = taskStartTimeDay.subtract(1, 'day')
+      
+      console.log(`[Notification]     Current day: ${currentTime.startOf('day').format('YYYY-MM-DD')}`)
+      console.log(`[Notification]     One day before: ${oneDayBefore.format('YYYY-MM-DD')}`)
+      console.log(`[Notification]     Is same day: ${currentTime.startOf('day').isSame(oneDayBefore, 'day')}`)
       
       // 检查是否已存在相同的通知
       const existingNotification = notificationStore.notifications.find(
@@ -83,7 +102,7 @@ export const checkTasksAndTriggerReminders = () => {
       )
       
       if (!existingNotification) {
-        console.log(`[Notification] Creating one-day-before reminder for task: ${task.name}`)
+        console.log(`[Notification]     ✅ Creating one-day-before reminder for task: ${task.name}`)
         notificationStore.addNotification({
           taskId: task.id,
           taskName: task.name,
@@ -93,14 +112,25 @@ export const checkTasksAndTriggerReminders = () => {
         })
         newNotificationsCreated++
       } else {
-        console.log(`[Notification] One-day-before reminder already exists for task: ${task.name}`)
+        console.log(`[Notification]     ⚠️ One-day-before reminder already exists for task: ${task.name}`)
       }
     }
     
     // 检查是否需要当天早上9点提醒
-    if (shouldTriggerSameDay9AMReminder(task)) {
-      const taskStartTime = dayjs(task.startDate).startOf('day')
-      const remindTime = taskStartTime.hour(9).minute(0).format('YYYY-MM-DD HH:mm')
+    const sameDay9AMResult = shouldTriggerSameDay9AMReminder(task)
+    console.log(`[Notification]   - Same day 9AM reminder: ${sameDay9AMResult}`)
+    
+    if (sameDay9AMResult) {
+      const taskStartTimeDay = taskStartTime.startOf('day')
+      const remindTime = taskStartTimeDay.hour(9).minute(0).format('YYYY-MM-DD HH:mm')
+      const sameDay9AM = taskStartTimeDay.hour(9).minute(0).second(0).millisecond(0)
+      
+      const diffMinutes = currentTime.diff(sameDay9AM, 'minute')
+      console.log(`[Notification]     Same day 9AM: ${sameDay9AM.format('YYYY-MM-DD HH:mm:ss')}`)
+      console.log(`[Notification]     Current time: ${currentTime.format('YYYY-MM-DD HH:mm:ss')}`)
+      console.log(`[Notification]     Diff minutes: ${diffMinutes}`)
+      console.log(`[Notification]     Within 5 minutes: ${Math.abs(diffMinutes) <= 5}`)
+      console.log(`[Notification]     Is same day: ${currentTime.isSame(taskStartTimeDay, 'day')}`)
       
       // 检查是否已存在相同的通知
       const existingNotification = notificationStore.notifications.find(
@@ -110,7 +140,7 @@ export const checkTasksAndTriggerReminders = () => {
       )
       
       if (!existingNotification) {
-        console.log(`[Notification] Creating same-day-9am reminder for task: ${task.name}`)
+        console.log(`[Notification]     ✅ Creating same-day-9am reminder for task: ${task.name}`)
         notificationStore.addNotification({
           taskId: task.id,
           taskName: task.name,
@@ -120,12 +150,14 @@ export const checkTasksAndTriggerReminders = () => {
         })
         newNotificationsCreated++
       } else {
-        console.log(`[Notification] Same-day-9am reminder already exists for task: ${task.name}`)
+        console.log(`[Notification]     ⚠️ Same-day-9am reminder already exists for task: ${task.name}`)
       }
     }
   })
   
+  console.log(`[Notification] =========================================`)
   console.log(`[Notification] Reminder check completed. ${newNotificationsCreated} new notifications created. Total notifications: ${notificationStore.notifications.length}, Unread: ${notificationStore.unreadCount}`)
+  console.log(`[Notification] =========================================`)
 }
 
 /**
