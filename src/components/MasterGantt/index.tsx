@@ -518,7 +518,6 @@ function MasterGantt({ projects }: MasterGanttProps) {
                         justifyContent: 'space-between',
                         marginTop: '4px',
                         gap: '4px',
-                        flexWrap: 'wrap'
                       }}
                     >
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
@@ -528,16 +527,6 @@ function MasterGantt({ projects }: MasterGanttProps) {
                         {project.pmo && (
                           <Tag color="cyan" style={{ fontSize: '10px', margin: 0 }}>
                             PMO: {project.pmo}
-                          </Tag>
-                        )}
-                        {project.developers && project.developers.length > 0 && (
-                          <Tag color="blue" style={{ fontSize: '10px', margin: 0 }}>
-                            开发: {project.developers.join('、')}
-                          </Tag>
-                        )}
-                        {project.testers && project.testers.length > 0 && (
-                          <Tag color="green" style={{ fontSize: '10px', margin: 0 }}>
-                            测试: {project.testers.join('、')}
                           </Tag>
                         )}
                       </div>
@@ -714,30 +703,57 @@ function MasterGantt({ projects }: MasterGanttProps) {
                           width: `${projectBarPosition.width}px`,
                           top: `${((rowHeights[project.id] || 64) - 40) / 2}px`,
                           display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
+                          flexDirection: 'column',
+                          justifyContent: 'center',
                           padding: '0 12px',
-                          minWidth: '60px'
+                          minWidth: '60px',
+                          minHeight: '40px'
                         }}
                         onClick={() => handleProjectClick(project)}
                       >
                         <div style={{ 
-                          flex: 1, 
-                          overflow: 'hidden', 
-                          textOverflow: 'ellipsis', 
-                          whiteSpace: 'nowrap',
-                          fontSize: '12px',
-                          fontWeight: '600'
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          width: '100%'
                         }}>
-                          {project.name}
+                          <div style={{ 
+                            flex: 1, 
+                            overflow: 'hidden', 
+                            textOverflow: 'ellipsis', 
+                            whiteSpace: 'nowrap',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>
+                            {project.name}
+                          </div>
+                          <div style={{ 
+                            fontSize: '11px', 
+                            fontWeight: '700',
+                            marginLeft: '8px'
+                          }}>
+                            {project.progress}%
+                          </div>
                         </div>
-                        <div style={{ 
-                          fontSize: '11px', 
-                          fontWeight: '700',
-                          marginLeft: '8px'
-                        }}>
-                          {project.progress}%
-                        </div>
+                        {(project.developers && project.developers.length > 0) || (project.testers && project.testers.length > 0) ? (
+                          <div style={{ 
+                            fontSize: '10px', 
+                            opacity: 0.9,
+                            marginTop: '2px',
+                            display: 'flex',
+                            gap: '8px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {project.developers && project.developers.length > 0 && (
+                              <span>开发: {project.developers.join('、')}</span>
+                            )}
+                            {project.testers && project.testers.length > 0 && (
+                              <span>测试: {project.testers.join('、')}</span>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     </Tooltip>
 
