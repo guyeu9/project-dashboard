@@ -279,8 +279,8 @@ function MasterGantt({ projects }: MasterGanttProps) {
   }
 
   const dateRange = useMemo(() => {
-    // 强制使用 2026-01-10 作为今天，确保演示效果一致
-    const today = dayjs().year(2026).month(0).date(10)
+    // 使用真实的今天日期
+    const today = dayjs()
     // 向前扩展 30 天，向后扩展 120 天，确保滚动空间足够
     const start = today.subtract(30, 'day')
     const end = today.add(120, 'day')
