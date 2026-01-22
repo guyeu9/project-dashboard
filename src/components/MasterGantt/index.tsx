@@ -92,6 +92,20 @@ function MasterGantt({ projects }: MasterGanttProps) {
     setAddingTaskToProject(null)
   }
 
+  // 根据 ID 获取 PMO 真实名称
+  const getPMOName = (pmoId: string | null | undefined): string => {
+    if (!pmoId) return '未分配'
+    const pmo = pmos.find(p => p.id === pmoId)
+    return pmo?.name || pmoId
+  }
+
+  // 根据 ID 获取 ProductManager 真实名称
+  const getProductManagerName = (pmId: string | null | undefined): string => {
+    if (!pmId) return '未分配'
+    const pm = productManagers.find(p => p.id === pmId)
+    return pm?.name || pmId
+  }
+
   // 获取任务类型对应的人员
   const getTaskTypePersonnel = (task: Task, project: Project): string[] => {
     const taskTypeName = task.type.name
@@ -296,7 +310,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [addingTaskToProject, setAddingTaskToProject] = useState<string | null>(null)
   const [collapsedProjectIds, setCollapsedProjectIds] = useState<string[]>([])
-  const { updateProject, tasks, addTask, updateTask, taskTypes } = useStore()
+  const { updateProject, tasks, addTask, updateTask, taskTypes, pmos, productManagers } = useStore()
 
   const toggleProjectCollapse = (projectId: string) => {
     setCollapsedProjectIds(prev => 
@@ -522,11 +536,11 @@ function MasterGantt({ projects }: MasterGanttProps) {
                     >
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                         <Tag color="orange" style={{ fontSize: '10px', margin: 0 }}>
-                          PM: {project.productManager || '未分配'}
+                          PM: {getProductManagerName(project.productManager)}
                         </Tag>
                         {project.pmo && (
                           <Tag color="cyan" style={{ fontSize: '10px', margin: 0 }}>
-                            PMO: {project.pmo}
+                            PMO: {getPMOName(project.pmo)}
                           </Tag>
                         )}
                       </div>
@@ -670,11 +684,13 @@ function MasterGantt({ projects }: MasterGanttProps) {
                       }}
                     />
                     
-                    <Tooltip 
+                    <Tooltip
                       title={
                         <div>
                           <div><strong>{project.name}</strong></div>
                           <div>负责人: {project.owner || '未分配'}</div>
+                          <div>PM: {getProductManagerName(project.productManager)}</div>
+                          <div>PMO: {getPMOName(project.pmo)}</div>
                           {project.developers && project.developers.length > 0 && (
                             <div>开发: {project.developers.join('、')}</div>
                           )}
