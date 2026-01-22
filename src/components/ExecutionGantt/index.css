@@ -31,7 +31,10 @@
 .task-type-name {
   font-size: 12px;
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
   flex-shrink: 0;
 }
 
