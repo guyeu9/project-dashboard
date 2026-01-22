@@ -518,6 +518,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
                         justifyContent: 'space-between',
                         marginTop: '4px',
                         gap: '4px',
+                        flexWrap: 'wrap'
                       }}
                     >
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
@@ -527,6 +528,16 @@ function MasterGantt({ projects }: MasterGanttProps) {
                         {project.pmo && (
                           <Tag color="cyan" style={{ fontSize: '10px', margin: 0 }}>
                             PMO: {project.pmo}
+                          </Tag>
+                        )}
+                        {project.developers && project.developers.length > 0 && (
+                          <Tag color="blue" style={{ fontSize: '10px', margin: 0 }}>
+                            开发: {project.developers.join('、')}
+                          </Tag>
+                        )}
+                        {project.testers && project.testers.length > 0 && (
+                          <Tag color="green" style={{ fontSize: '10px', margin: 0 }}>
+                            测试: {project.testers.join('、')}
                           </Tag>
                         )}
                       </div>
@@ -674,7 +685,13 @@ function MasterGantt({ projects }: MasterGanttProps) {
                       title={
                         <div>
                           <div><strong>{project.name}</strong></div>
-                          <div>负责人: {project.owner}</div>
+                          <div>负责人: {project.owner || '未分配'}</div>
+                          {project.developers && project.developers.length > 0 && (
+                            <div>开发: {project.developers.join('、')}</div>
+                          )}
+                          {project.testers && project.testers.length > 0 && (
+                            <div>测试: {project.testers.join('、')}</div>
+                          )}
                           <div>进度: {project.progress}%</div>
                           <div>状态: {
                             projectBarPosition.status === 'normal' ? '正常' :
