@@ -889,15 +889,9 @@ function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnal
   })
 
   if (context.scope === 'single' && context.projectId) {
-    const targetProject = projects.find(p => p.id === context.projectId)
-    if (targetProject && targetProject.status !== 'paused') {
-      targetProjects = [targetProject]
-      targetTasks = tasks.filter(t => t.projectId === context.projectId)
-    } else {
-      // 如果指定的是暂停项目，返回空数据
-      targetProjects = []
-      targetTasks = []
-    }
+    // 单项目分析时，不管项目是否暂停都正常分析
+    targetProjects = projects.filter(p => p.id === context.projectId)
+    targetTasks = tasks.filter(t => t.projectId === context.projectId)
   }
 
   const currentDate = new Date()
