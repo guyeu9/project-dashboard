@@ -170,8 +170,8 @@ function MasterGantt({ projects }: MasterGanttProps) {
   }
 
   const getProjectBarPosition = (project: Project) => {
-    const projectStartDate = dayjs(project.startDate)
-    const projectEndDate = dayjs(project.endDate)
+    const projectStartDate = dayjs(project.startDate).startOf('day')
+    const projectEndDate = dayjs(project.endDate).startOf('day')
     
     const projectStartOffset = projectStartDate.diff(dateRange.start, 'day')
     const projectDuration = projectEndDate.diff(projectStartDate, 'day') + 1
@@ -189,8 +189,8 @@ function MasterGantt({ projects }: MasterGanttProps) {
 
   // 任务进度条位置计算
   const getTaskBarPosition = (task: Task) => {
-    const taskStartDate = dayjs(task.startDate)
-    const taskEndDate = dayjs(task.endDate)
+    const taskStartDate = dayjs(task.startDate).startOf('day')
+    const taskEndDate = dayjs(task.endDate).startOf('day')
     
     const taskStartOffset = taskStartDate.diff(dateRange.start, 'day')
     const taskDuration = taskEndDate.diff(taskStartDate, 'day') + 1
@@ -280,7 +280,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
 
   const dateRange = useMemo(() => {
     // 使用真实的今天日期
-    const today = dayjs()
+    const today = dayjs().startOf('day')
     // 向前扩展 30 天，向后扩展 120 天，确保滚动空间足够
     const start = today.subtract(30, 'day')
     const end = today.add(120, 'day')
