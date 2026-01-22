@@ -29,7 +29,7 @@ interface LoginFormProps {
   onQuickAdmin: () => void
 }
 
-function LoginForm({ role, onQuickAdmin }: LoginFormProps) {
+function LoginForm({ role, onQuickAdmin, onLogin }: LoginFormProps & { onLogin?: () => void }) {
   // 只有在非管理员身份时才需要表单
   if (role === 'admin') {
     return (
@@ -41,6 +41,18 @@ function LoginForm({ role, onQuickAdmin }: LoginFormProps) {
   }
 
   const [form] = Form.useForm()
+
+  const handleSubmit = () => {
+    form.validateFields().then((values) => {
+      console.log('登录表单提交:', values)
+      // 简单验证：用户名和密码都是 admin
+      if (values.username === 'admin' && values.password === 'admin') {
+        onLogin?.()
+      } else {
+        message.error('账号或密码错误')
+      }
+    })
+  }
 
   return (
     <Form
@@ -76,7 +88,7 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const { message } = AntApp.useApp()
   const [collapsed, setCollapsed] = useState(false)
-  const { notifications, unreadCount, confirmNotification } = useNotificationStore()
+  const { notifications, unreadCount, confirmNotification, deleteNotification } = useNotificationStore()
   const { role, initFromCookie, quickAdminLogin, logout } = useAuthStore()
   const { openModal } = useAIAnalysisStore()
   const [loginVisible, setLoginVisible] = useState(false)
@@ -219,6 +231,7 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
                 notifications={notifications}
                 unreadCount={unreadCount}
                 onConfirm={confirmNotification}
+                onDelete={deleteNotification}
               />
               <div 
                 className="user-profile"
@@ -255,13 +268,14 @@ function CustomLayout({ children }: { children: React.ReactNode }) {
         title={role === 'admin' ? '账户信息' : '管理员登录'}
         open={loginVisible}
         onCancel={() => setLoginVisible(false)}
-        onOk={role === 'admin' ? handleLogout : undefined}
+        onOk={role === 'admin' ? handleLogout : handleQuickAdmin}
         okText={role === 'admin' ? '退出登录' : '登录'}
       >
         {loginVisible && (
           <LoginForm
           role={role}
           onQuickAdmin={handleQuickAdmin}
+          onLogin={handleQuickAdmin}
         />
         )}
       </Modal>

@@ -8,10 +8,11 @@ interface NotificationDropdownProps {
   notifications: NotificationItemType[]
   unreadCount: number
   onConfirm: (notificationId: string) => void
+  onDelete?: (notificationId: string) => void
 }
 
-const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notifications, unreadCount, onConfirm }) => {
-  // 获取待处理的提醒
+const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notifications, unreadCount, onConfirm, onDelete }) => {
+  // 获取所有待处理的通知
   const pendingNotifications = notifications.filter(n => n.status === 'pending')
   
   // 渲染下拉菜单内容
@@ -19,12 +20,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notificatio
     return (
       <div 
         style={{
-          width: '320px',
-          maxHeight: '400px',
+          width: '380px',
+          maxHeight: '500px',
           overflowY: 'auto',
           backgroundColor: '#fff',
           borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
           border: '1px solid #f0f0f0',
           animation: 'fadeIn 0.3s ease'
         }}
@@ -40,31 +41,58 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notificatio
                 opacity: 1;
                 transform: translateY(0);
               }
+          }
+          
+            .notification-list::-webkit-scrollbar {
+              width: 6px;
+            }
+            
+            .notification-list::-webkit-scrollbar-track {
+              background: #f1f1f1;
+              border-radius: 3px;
+            }
+            
+            .notification-list::-webkit-scrollbar-thumb {
+              background: #c1c1c1;
+              border-radius: 3px;
+            }
+            
+            .notification-list::-webkit-scrollbar-thumb:hover {
+              background: #a1a1a1;
             }
           `}
         </style>
         <div style={{
           padding: '12px 16px',
-          fontWeight: '500',
+          fontWeight: '600',
           color: '#333',
           borderBottom: '1px solid #f0f0f0',
-          background: '#fafafa'
+          background: '#fafafa',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1
         }}>
           待处理提醒 ({pendingNotifications.length})
         </div>
         
         {pendingNotifications.length === 0 ? (
-          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-            <Empty description="暂无待处理提醒" />
+          <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+            <Empty 
+              description="暂无待处理提醒" 
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
           </div>
         ) : (
-          pendingNotifications.map(notification => (
-            <NotificationItem
-              key={notification.id}
-              notification={notification}
-              onConfirm={onConfirm}
-            />
-          ))
+          <div className="notification-list">
+            {pendingNotifications.map(notification => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onConfirm={onConfirm}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
         )}
       </div>
     )
@@ -87,7 +115,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notificatio
           color: '#666',
           padding: '8px',
           borderRadius: '50%',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          marginRight: '12px'
         }}
         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'}
         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -97,21 +126,37 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ notificatio
           <span
             style={{
               position: 'absolute',
-              top: '0',
-              right: '0',
+              top: '2px',
+              right: '2px',
               backgroundColor: '#ff4d4f',
               color: '#fff',
-              fontSize: '12px',
+              fontSize: '11px',
               fontWeight: 'bold',
-              padding: '1px 6px',
+              padding: '0 5px',
               borderRadius: '10px',
               minWidth: '18px',
-              textAlign: 'center'
+              height: '18px',
+              lineHeight: '18px',
+              textAlign: 'center',
+              boxShadow: '0 2px 4px rgba(255, 77, 79, 0.3)',
+              animation: 'badgePulse 2s infinite'
             }}
           >
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
+        <style>
+          {`
+            @keyframes badgePulse {
+              0%, 100% {
+                transform: scale(1);
+              }
+              50% {
+                transform: scale(1.1);
+              }
+            }
+          `}
+        </style>
       </div>
     </Dropdown>
   )
