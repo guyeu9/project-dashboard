@@ -229,7 +229,8 @@ const statusMap = {
   'delayed': '延期',
   'risk': '风险',
   'completed': '已完成',
-  'pending': '待开始'
+  'pending': '待开始',
+  'paused': '暂停'
 }
 
 const getStatusText = (status: string) => statusMap[status as keyof typeof statusMap] || status
@@ -881,12 +882,22 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
 }))
 
 function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnalysisContext) {
-  let targetProjects = projects
-  let targetTasks = tasks
+  let targetProjects = projects.filter(p => p.status !== 'paused')  // 过滤掉暂停状态的项目
+  let targetTasks = tasks.filter(t => {
+    const project = projects.find(p => p.id === t.projectId)
+    return project && project.status !== 'paused'  // 过滤掉属于暂停项目的任务
+  })
 
   if (context.scope === 'single' && context.projectId) {
-    targetProjects = projects.filter(p => p.id === context.projectId)
-    targetTasks = tasks.filter(t => t.projectId === context.projectId)
+    const targetProject = projects.find(p => p.id === context.projectId)
+    if (targetProject && targetProject.status !== 'paused') {
+      targetProjects = [targetProject]
+      targetTasks = tasks.filter(t => t.projectId === context.projectId)
+    } else {
+      // 如果指定的是暂停项目，返回空数据
+      targetProjects = []
+      targetTasks = []
+    }
   }
 
   const currentDate = new Date()

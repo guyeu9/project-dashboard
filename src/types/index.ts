@@ -16,7 +16,7 @@ export interface HistoryRecord {
 export interface Project {
   id: string
   name: string
-  status: 'normal' | 'delayed' | 'risk' | 'completed' | 'pending'
+  status: 'normal' | 'delayed' | 'risk' | 'completed' | 'pending' | 'paused'
   progress: number
   startDate: string
   endDate: string

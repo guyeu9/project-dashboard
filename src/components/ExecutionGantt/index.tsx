@@ -98,6 +98,7 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask,
                   delayed: { color: 'var(--error-color)', text: '延期' },
                   completed: { color: '#595959', text: '已完成' },
                   pending: { color: 'var(--pending-color)', text: '待开始' },
+                  paused: { color: '#faad14', text: '暂停' },
                 }
                 const config = statusConfig[status as keyof typeof statusConfig]
                 return <Tag color={config.color}>{config.text}</Tag>
@@ -183,6 +184,7 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask,
       delayed: 'var(--error-color)',      // 延期 → 红色
       completed: '#595959',    // 已完成 → 灰色
       pending: 'var(--pending-color)',      // 待开始 → 紫色
+      paused: '#faad14',                      // 暂停 → 橙色
     }
     return colorMap[status as keyof typeof colorMap] || 'var(--success-color)'
   }

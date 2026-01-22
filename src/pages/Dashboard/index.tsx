@@ -83,15 +83,18 @@ function Dashboard() {
 
   const filteredProjects = useMemo(() => {
     const today = new Date().toISOString().split('T')[0]
-    if (selectedFilter === 'all') return projects.filter(p => p.status !== 'completed')
+    // 首先过滤掉暂停状态的项目
+    let result = projects.filter(p => p.status !== 'paused')
+    
+    if (selectedFilter === 'all') return result.filter(p => p.status !== 'completed')
     if (selectedFilter === 'pending') {
-      return projects.filter(p => {
+      return result.filter(p => {
         if (p.status === 'pending') return true
         if (!p.startDate) return true
         return p.startDate > today
       })
     }
-    return projects.filter(p => p.status === selectedFilter)
+    return result.filter(p => p.status === selectedFilter)
   }, [projects, selectedFilter])
 
   const handleFilterClick = (key: string) => {

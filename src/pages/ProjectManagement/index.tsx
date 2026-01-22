@@ -58,6 +58,7 @@ function ProjectManagement() {
     { label: '正常', value: 'normal' },
     { label: '延期', value: 'delayed' },
     { label: '风险', value: 'risk' },
+    { label: '暂停', value: 'paused' },
     { label: '已完成', value: 'completed' },
   ]
 
@@ -238,6 +239,7 @@ function ProjectManagement() {
       delayed: 'var(--error-color)', // 延期统一红色
       risk: 'var(--warning-color)',   // 风险/黄色
       pending: 'var(--pending-color)', // 待开始/紫色
+      paused: '#faad14',              // 暂停/橙色
       completed: '#595959',
     }
     return colorMap[status as keyof typeof colorMap] || 'var(--neutral-secondary)'
@@ -249,6 +251,7 @@ function ProjectManagement() {
       normal: '正常',
       delayed: '延期',
       risk: '风险',
+      paused: '暂停',
       completed: '已完成',
     }
     return textMap[status as keyof typeof textMap] || status

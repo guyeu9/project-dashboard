@@ -402,7 +402,7 @@ function SmartParser() {
               .filter(p => p.status !== 'completed')
               .map(project => (
                 <Option key={project.id} value={project.id}>
-                  {project.name} ({project.status === 'normal' ? '进行中' : project.status === 'delayed' ? '延期' : project.status === 'risk' ? '风险' : project.status === 'pending' ? '待开始' : '已完成'})
+                  {project.name} ({project.status === 'normal' ? '进行中' : project.status === 'delayed' ? '延期' : project.status === 'risk' ? '风险' : project.status === 'pending' ? '待开始' : project.status === 'paused' ? '暂停' : '已完成'})
                 </Option>
               ))}
           </Select>

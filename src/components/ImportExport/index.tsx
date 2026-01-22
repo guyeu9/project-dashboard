@@ -37,7 +37,7 @@ function ImportExport() {
         const projectSummaryData = projects.map(p => ({
           '项目ID': p.id,
           '项目名称': p.name,
-          '状态': p.status === 'normal' ? '正常' : p.status === 'risk' ? '风险' : p.status === 'delayed' ? '延期' : p.status,
+          '状态': p.status === 'normal' ? '正常' : p.status === 'risk' ? '风险' : p.status === 'delayed' ? '延期' : p.status === 'paused' ? '暂停' : p.status,
           '进度': `${p.progress}%`,
           '开始日期': p.startDate,
           '结束日期': p.endDate,
@@ -107,7 +107,7 @@ function ImportExport() {
               '类型名称': t.type.name,
               '类型颜色': t.type.color,
               '是否启用': t.type.enabled ? '是' : '否',
-              '状态': t.status === 'normal' ? '正常' : t.status === 'risk' ? '风险' : t.status === 'delayed' ? '延期' : t.status,
+              '状态': t.status === 'normal' ? '正常' : t.status === 'risk' ? '风险' : t.status === 'delayed' ? '延期' : t.status === 'paused' ? '暂停' : t.status,
               '进度': `${t.progress}%`,
               '开始': t.startDate,
               '结束': t.endDate,
@@ -284,6 +284,7 @@ function ImportExport() {
           risk: { color: 'var(--warning-color)', text: '风险' },
           completed: { color: '#595959', text: '已完成' },
           pending: { color: 'var(--pending-color)', text: '待开始' },
+          paused: { color: '#faad14', text: '暂停' },
         }
         const config = statusConfig[status as keyof typeof statusConfig] || { color: 'var(--success-color)', text: status }
         return <Tag color={config.color}>{config.text}</Tag>

@@ -335,6 +335,7 @@ function ResourceHeatmap({ tasks }: ResourceHeatmapProps) {
                             task.status === 'delayed' ? 'var(--error-color)' : 
                             task.status === 'completed' ? '#595959' : 
                             task.status === 'pending' ? 'var(--pending-color)' : 
+                            task.status === 'paused' ? '#faad14' :
                             'default'
                           }>
                             {task.status === 'normal' ? '正常' : 
@@ -342,6 +343,7 @@ function ResourceHeatmap({ tasks }: ResourceHeatmapProps) {
                              task.status === 'delayed' ? '延期' : 
                              task.status === 'completed' ? '已完成' : 
                              task.status === 'pending' ? '待开始' : 
+                             task.status === 'paused' ? '暂停' :
                              task.status}
                           </Tag>
                         </div>

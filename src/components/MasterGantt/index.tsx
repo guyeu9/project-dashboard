@@ -228,6 +228,10 @@ function MasterGantt({ projects }: MasterGanttProps) {
       backgroundColor = 'var(--pending-color)' // 待开始 - 紫色
       borderColor = 'var(--pending-color)'
       textColor = '#ffffff'
+    } else if (finalStatus === 'paused') {
+      backgroundColor = '#faad14' // 暂停 - 橙色
+      borderColor = '#faad14'
+      textColor = '#ffffff'
     }
 
     return {
@@ -705,6 +709,7 @@ function MasterGantt({ projects }: MasterGanttProps) {
                             projectBarPosition.status === 'risk' ? '风险' :
                             projectBarPosition.status === 'delayed' ? '延期' :
                             projectBarPosition.status === 'completed' ? '已完成' :
+                            projectBarPosition.status === 'paused' ? '暂停' :
                             '待开始'
                           }</div>
                           {riskDates.length > 0 && (
