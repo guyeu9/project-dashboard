@@ -869,38 +869,27 @@ function SettingsPage() {
             />
           </Form.Item>
           <Form.Item label="模型名称" required>
-            <Space.Compact>
-              <Form.Item
-                name="model"
-                noStyle
-                rules={[{ required: true, message: '请选择或输入模型名称' }]}
-              >
-                <Select
-                  showSearch
-                  placeholder="请选择模型"
-                  style={{ width: availableModels.length > 0 ? 'calc(100% - 120px)' : '100%' }}
-                  disabled={!isAdmin}
-                  options={availableModels.map(model => ({
-                    label: model.name,
-                    value: model.id
-                  }))}
-                  filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                  }
-                />
-              </Form.Item>
-              {availableModels.length > 0 && (
-                <Button
-                  type="default"
-                  onClick={() => setAvailableModels([])}
-                  disabled={!isAdmin}
-                  style={{ width: '120px' }}
-                >
-                  清空列表
-                </Button>
-              )}
-            </Space.Compact>
-            <div style={{ marginTop: 8 }}>
+            <Form.Item
+              name="model"
+              noStyle
+              rules={[{ required: true, message: '请选择或输入模型名称' }]}
+            >
+              <Select
+                showSearch
+                placeholder="请选择或输入模型名称"
+                style={{ width: '100%' }}
+                disabled={!isAdmin}
+                mode="combobox"
+                options={availableModels.map(model => ({
+                  label: model.name,
+                  value: model.id
+                }))}
+                filterOption={(input, option) =>
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+              />
+            </Form.Item>
+            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Button
                 type="link"
                 size="small"
@@ -911,11 +900,21 @@ function SettingsPage() {
                 {loadingModels ? '获取中...' : '从服务端获取模型列表'}
               </Button>
               {availableModels.length > 0 && (
-                <span style={{ marginLeft: 8, color: '#666', fontSize: '12px' }}>
-                  已获取 {availableModels.length} 个模型
-                </span>
+                <Button
+                  type="default"
+                  size="small"
+                  onClick={() => setAvailableModels([])}
+                  disabled={!isAdmin}
+                >
+                  清空模型列表
+                </Button>
               )}
             </div>
+            {availableModels.length > 0 && (
+              <div style={{ marginTop: 4, color: '#666', fontSize: '12px' }}>
+                已获取 {availableModels.length} 个模型
+              </div>
+            )}
           </Form.Item>
           <Form.Item
             label="启用"
