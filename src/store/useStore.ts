@@ -718,12 +718,32 @@ const useStore = create<AppState>((set, get) => {
     
     createTasksFromSchedule: (projectId: string, schedules: ScheduleItem[]) => {
       const state = get()
-      const devType = state.taskTypes.find(t => t.name === '开发排期')
-      const testType = state.taskTypes.find(t => t.name === '测试排期')
-      
+
+      // 日期格式转换函数：YYYY.MM.DD -> YYYY-MM-DD
+      const convertDate = (dateStr: string): string => {
+        return dateStr.replace(/\./g, '-')
+      }
+
       for (const schedule of schedules) {
-        const taskType = schedule.name.includes('测试') ? testType : devType
-        
+        let taskType = state.taskTypes.find(t => t.name === schedule.name)
+
+        // 如果找不到精确匹配，尝试模糊匹配
+        if (!taskType) {
+          if (schedule.name.includes('开发') && schedule.name.includes('联调')) {
+            taskType = state.taskTypes.find(t => t.name === '开发联调')
+          } else if (schedule.name.includes('测试') && schedule.name.includes('联调')) {
+            taskType = state.taskTypes.find(t => t.name === '测试联调')
+          } else if (schedule.name.includes('产品') || schedule.name.includes('UAT')) {
+            taskType = state.taskTypes.find(t => t.name === '产品UAT')
+          } else if (schedule.name.includes('上线') || schedule.name.includes('部署') || schedule.name.includes('发布')) {
+            taskType = state.taskTypes.find(t => t.name === '上线')
+          } else if (schedule.name.includes('测试')) {
+            taskType = state.taskTypes.find(t => t.name === '测试排期')
+          } else if (schedule.name.includes('开发')) {
+            taskType = state.taskTypes.find(t => t.name === '开发排期')
+          }
+        }
+
         if (taskType) {
           const newTask = {
             id: `task-${Date.now()}`,
@@ -732,12 +752,14 @@ const useStore = create<AppState>((set, get) => {
             type: taskType,
             status: 'normal' as const,
             progress: 0,
-            startDate: schedule.startDate,
-            endDate: schedule.endDate,
+            startDate: convertDate(schedule.startDate),
+            endDate: convertDate(schedule.endDate),
             assignees: [],
             dailyRecords: []
           }
           state.addTask(newTask)
+        } else {
+          console.warn(`[createTasksFromSchedule] 找不到匹配的任务类型: ${schedule.name}`)
         }
       }
     }

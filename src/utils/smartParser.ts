@@ -72,15 +72,21 @@ export function parseSmartProjectInfo(text: string): SmartParseResult | null {
 
 function isScheduleName(line: string): boolean {
   const scheduleNames = [
+    '开发排期',
+    '开发联调',
     '开发设计',
     '开发',
     '开发自测',
+    '测试排期',
+    '测试联调',
     '测试设计',
     '测试',
+    '产品UAT',
     'UAT测试',
     '准生产测试',
     '三方联调',
     '上线',
+    '上线时间',
     '技术负责人',
     '提出人',
     '抄送人',
@@ -99,25 +105,69 @@ function isScheduleName(line: string): boolean {
 }
 
 function parseScheduleItem(line: string, lastScheduleName: string): ScheduleItem | null {
-  const datePattern = /(\d{4}\.\d{2}\.\d{2})\s*-\s*(\d{4}\.\d{2}\.\d{2})\s*\((\d+\.?\d*)小时\)/
-  const singleDatePattern = /(\d{4}\.\d{2}\.\d{2})/
+  // 支持多种日期格式：
+  // 1. YYYY.MM.DD-YYYY.MM.DD (2024.12.25-2025.01.01)
+  // 2. MM.DD-MM.DD (12.25-1.1)
+  // 3. MM.DD (单日期)
 
-  const match = line.match(datePattern)
-  if (match && lastScheduleName) {
+  // 完整日期格式：YYYY.MM.DD-YYYY.MM.DD
+  const fullDatePattern = /(\d{4}\.\d{1,2}\.\d{1,2})\s*[-—～~到至]\s*(\d{4}\.\d{1,2}\.\d{1,2})/
+  const fullMatch = line.match(fullDatePattern)
+  if (fullMatch && lastScheduleName) {
     return {
       name: lastScheduleName,
-      startDate: match[1],
-      endDate: match[2],
-      duration: parseFloat(match[3])
+      startDate: fullMatch[1],
+      endDate: fullMatch[2],
+      duration: 0
     }
   }
 
-  const singleMatch = line.match(singleDatePattern)
-  if (singleMatch && lastScheduleName) {
+  // 简化日期格式：MM.DD-MM.DD
+  const shortDatePattern = /(\d{1,2}\.\d{1,2})\s*[-—～~到至]\s*(\d{1,2}\.\d{1,2})/
+  const shortMatch = line.match(shortDatePattern)
+  if (shortMatch && lastScheduleName) {
+    // 转换为完整日期格式，自动补充年份
+    const currentYear = new Date().getFullYear()
+    let startMonth = parseInt(shortMatch[1].split('.')[0])
+    let endMonth = parseInt(shortMatch[2].split('.')[0])
+
+    // 判断是否跨年：如果结束月份小于开始月份（且差距较大），则跨年
+    const startYear = currentYear
+    let endYear = currentYear
+    if (endMonth < startMonth && (startMonth - endMonth) > 6) {
+      endYear = currentYear + 1
+    }
+
+    const startStr = `${startYear}.${shortMatch[1].padStart(5, '0').replace(/\./g, '.')}`
+    const endStr = `${endYear}.${shortMatch[2].padStart(5, '0').replace(/\./g, '.')}`
+
     return {
       name: lastScheduleName,
-      startDate: singleMatch[1],
-      endDate: singleMatch[1],
+      startDate: `${startYear}.${shortMatch[1]}`,
+      endDate: `${endYear}.${shortMatch[2]}`,
+      duration: 0
+    }
+  }
+
+  // 单日期格式：MM.DD 或 YYYY.MM.DD
+  const singleDatePattern = /(\d{4}\.\d{1,2}\.\d{1,2})|(\d{1,2}\.\d{1,2})/
+  const singleMatch = line.match(singleDatePattern)
+  if (singleMatch && lastScheduleName) {
+    const dateStr = singleMatch[0]
+    // 如果是简化格式，补充年份
+    if (!dateStr.match(/^\d{4}\./)) {
+      const currentYear = new Date().getFullYear()
+      return {
+        name: lastScheduleName,
+        startDate: `${currentYear}.${dateStr}`,
+        endDate: `${currentYear}.${dateStr}`,
+        duration: 0
+      }
+    }
+    return {
+      name: lastScheduleName,
+      startDate: dateStr,
+      endDate: dateStr,
       duration: 0
     }
   }
