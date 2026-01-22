@@ -43,11 +43,14 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask,
         fixed: 'left' as const,
         render: (_: string, record: Task) => {
           const taskTypeName = record.type?.name || ''
+          const taskColor = record.type?.color || 'default'
           const taskName = record.name || ''
 
           return (
             <div className="task-info-cell">
-              <span className="task-type-name">{taskTypeName}</span>
+              <Tag color={taskColor} style={{ borderRadius: 12, padding: '0 12px', color: '#fff' }}>
+                {taskTypeName}
+              </Tag>
               <span className="task-name">{taskName}</span>
             </div>
           )
