@@ -160,6 +160,7 @@ function ProjectEditModal({ visible, project, onSave, onAdd, onCancel, onProject
               <Option value="normal">正常</Option>
               <Option value="delayed">延期</Option>
               <Option value="risk">风险</Option>
+              <Option value="paused">暂停</Option>
               <Option value="completed">已完成</Option>
             </Select>
           </Form.Item>
