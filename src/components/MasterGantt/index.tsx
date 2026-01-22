@@ -584,11 +584,11 @@ function MasterGantt({ projects }: MasterGanttProps) {
                     style={{ minHeight: 32, height: 'fit-content' }}
                   >
                     <div className="task-info" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden', height: '100%' }}>
-                      <Tag 
-                        color={task.type.color} 
-                        style={{ 
-                          fontSize: '10px', 
-                          margin: 0, 
+                      <Tag
+                        color={task.type.color}
+                        style={{
+                          fontSize: '10px',
+                          margin: 0,
                           borderRadius: '10px',
                           padding: '0 8px',
                           lineHeight: '18px',
@@ -599,7 +599,9 @@ function MasterGantt({ projects }: MasterGanttProps) {
                       >
                         {task.type.name}
                       </Tag>
-                      <div className="task-name" style={{ fontSize: '12px' }}>{task.name}</div>
+                      <div className="task-period" style={{ fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {dayjs(task.startDate).format('YYYY.MM.DD')}-{dayjs(task.endDate).format('YYYY.MM.DD')}
+                      </div>
                     </div>
                     <Tooltip title="编辑任务">
                       <Button

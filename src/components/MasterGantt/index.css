@@ -111,6 +111,14 @@
   color: var(--neutral-secondary);
 }
 
+.task-period {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--neutral-secondary);
+}
+
 .edit-button {
   opacity: 0;
   transition: opacity var(--transition-base);
