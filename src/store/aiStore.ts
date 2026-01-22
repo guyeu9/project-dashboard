@@ -882,16 +882,20 @@ const useAIAnalysisStore = create<AIAnalysisState>((set, get) => ({
 }))
 
 function prepareAnalysisData(projects: Project[], tasks: Task[], context: AIAnalysisContext) {
-  let targetProjects = projects.filter(p => p.status !== 'paused')  // 过滤掉暂停状态的项目
-  let targetTasks = tasks.filter(t => {
-    const project = projects.find(p => p.id === t.projectId)
-    return project && project.status !== 'paused'  // 过滤掉属于暂停项目的任务
-  })
+  let targetProjects: Project[]
+  let targetTasks: Task[]
 
   if (context.scope === 'single' && context.projectId) {
-    // 单项目分析时，不管项目是否暂停都正常分析
+    // 单项目分析：不过滤任何状态，直接分析指定项目
     targetProjects = projects.filter(p => p.id === context.projectId)
     targetTasks = tasks.filter(t => t.projectId === context.projectId)
+  } else {
+    // 全局分析：过滤掉暂停和已完成的项目
+    targetProjects = projects.filter(p => p.status !== 'paused' && p.status !== 'completed')
+    targetTasks = tasks.filter(t => {
+      const project = projects.find(p => p.id === t.projectId)
+      return project && project.status !== 'paused' && project.status !== 'completed'
+    })
   }
 
   const currentDate = new Date()
