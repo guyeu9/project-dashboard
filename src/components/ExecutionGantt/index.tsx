@@ -36,21 +36,24 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask,
   const columns = useMemo(() => {
     const baseColumns = [
       {
-        title: '任务名称',
+        title: '任务信息',
         dataIndex: 'name',
         key: 'name',
-        width: 200,
+        width: 240,
         fixed: 'left' as const,
-        render: (text: string, record: Task) => (
-          <div className="task-name-cell">
-            <div className="task-name">{text}</div>
-            {record.dailyProgress && (
-              <div className="daily-progress">
-                {record.dailyProgress}
-              </div>
-            )}
-          </div>
-        ),
+        render: (_: string, record: Task) => {
+          const taskTypeName = record.type?.name || ''
+          const startDate = dayjs(record.startDate).format('YYYY.MM.DD')
+          const endDate = dayjs(record.endDate).format('YYYY.MM.DD')
+          const dateRange = `${startDate}-${endDate}`
+
+          return (
+            <div className="task-info-cell">
+              <span className="task-type-name">{taskTypeName}</span>
+              <span className="task-date-range">{dateRange}</span>
+            </div>
+          )
+        },
       },
       {
         title: '负责人',
