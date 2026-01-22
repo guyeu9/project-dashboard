@@ -79,14 +79,7 @@ function ExecutionGantt({ tasks, onTaskDoubleClick, onViewHistory, onDeleteTask,
           const endDate = dayjs(record.endDate).format('YYYY.MM.DD')
           return (
             <div className="task-period-cell">
-              <div className="period-date">
-                <span className="period-label">开始：</span>
-                {startDate}
-              </div>
-              <div className="period-date">
-                <span className="period-label">结束：</span>
-                {endDate}
-              </div>
+              {startDate}-{endDate}
             </div>
           )
         },
