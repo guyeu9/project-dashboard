@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Card, Row, Col, Tag, Input, Space, Modal, Button, Select, App as AntApp, DatePicker } from 'antd'
+import dayjs from 'dayjs'
 import {
   EditOutlined,
   LinkOutlined,
@@ -74,9 +75,8 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
     setEditingField(field)
     // 处理日期字段
     if (field === 'startDate' || field === 'endDate') {
-      // 将日期字符串转换为Date对象
-      const date = new Date(currentValue)
-      setEditValue(date)
+      // 将日期字符串转换为 dayjs 对象
+      setEditValue(dayjs(currentValue))
     } else {
       setEditValue(currentValue)
     }
@@ -91,14 +91,11 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
     
     // 处理日期字段
     if (editingField === 'startDate' || editingField === 'endDate') {
-      // 将Date对象转换为YYYY-MM-DD格式的字符串
-      if (value instanceof Date) {
-        const year = value.getFullYear()
-        const month = String(value.getMonth() + 1).padStart(2, '0')
-        const day = String(value.getDate()).padStart(2, '0')
-        value = `${year}-${month}-${day}`
+      // 将 dayjs 对象转换为 YYYY-MM-DD 格式的字符串
+      if (dayjs.isDayjs(value)) {
+        value = value.format('YYYY-MM-DD')
       }
-    } 
+    }
     // 处理数组类型的字段
     else if (editingField === 'partners' || editingField === 'developers' || editingField === 'testers') {
       value = (editValue as string).split(',').map((item: string) => item.trim()).filter((item: string) => item)
@@ -470,7 +467,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               {editingField === 'startDate' || editingField === 'endDate' ? (
                 <Space>
                   <DatePicker
-                    value={editValue instanceof Date ? editValue : null}
+                    value={dayjs.isDayjs(editValue) ? editValue : null}
                     onChange={(date) => setEditValue(date || '')}
                     placeholder={editingField === 'startDate' ? '选择开始日期' : '选择结束日期'}
                     style={{ width: '100%' }}
@@ -486,7 +483,7 @@ function ProjectHeader({ project, onProjectUpdate, isAdmin, onBack }: ProjectHea
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
                   <span style={{ width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {project.startDate} ~ {project.endDate}
+                    {dayjs(project.startDate).format('YYYY-MM-DD')} ~ {dayjs(project.endDate).format('YYYY-MM-DD')}
                   </span>
                   {isAdmin && (
                     <Space style={{ marginTop: '4px' }}>
