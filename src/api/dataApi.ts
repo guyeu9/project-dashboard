@@ -5,6 +5,7 @@ import {
   taskTypes,
   pmos,
   productManagers,
+  historyRecords,
   insertProjectSchema,
   insertTaskSchema,
   insertTaskTypeSchema,
@@ -17,13 +18,14 @@ export async function getAllData() {
   try {
     const db = await getDb();
 
-    const [projectsData, tasksData, taskTypesData, pmosData, productManagersData] =
+    const [projectsData, tasksData, taskTypesData, pmosData, productManagersData, historyRecordsData] =
       await Promise.all([
         db.select().from(projects as any).orderBy((projects as any).createdAt),
         db.select().from(tasks as any).orderBy((tasks as any).startDate),
         db.select().from(taskTypes as any).orderBy((taskTypes as any).name),
         db.select().from(pmos as any).orderBy((pmos as any).name),
         db.select().from(productManagers as any).orderBy((productManagers as any).name),
+        db.select().from(historyRecords as any).orderBy((historyRecords as any).operatedAt),
       ]);
 
     // 如果 taskTypes 为空，返回默认值
@@ -45,7 +47,7 @@ export async function getAllData() {
       taskTypes: finalTaskTypes,
       pmos: pmosData,
       productManagers: productManagersData,
-      historyRecords: [], // 历史记录可以按需加载
+      historyRecords: historyRecordsData,
     };
   } catch (error: any) {
     console.error("[ERROR] 从数据库读取数据失败:", error.message);
@@ -119,6 +121,7 @@ export async function saveAllData(data: {
       await tx.delete(taskTypes as any);
       await tx.delete(pmos as any);
       await tx.delete(productManagers as any);
+      await tx.delete(historyRecords as any);
 
       // 插入新数据 - 直接插入，跳过 schema 验证
       if (data.projects && data.projects.length > 0) {
@@ -174,6 +177,11 @@ export async function saveAllData(data: {
 
       if (data.productManagers && data.productManagers.length > 0) {
         await tx.insert(productManagers as any).values(data.productManagers as any);
+      }
+
+      // 保存历史记录
+      if (data.historyRecords && data.historyRecords.length > 0) {
+        await tx.insert(historyRecords as any).values(data.historyRecords as any);
       }
     });
 
