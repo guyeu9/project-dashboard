@@ -174,8 +174,17 @@ function DailyProgressManager({ task, project, onUpdate, isAdmin }: DailyProgres
       title: '内容',
       dataIndex: 'content',
       key: 'content',
-      ellipsis: true,
-      width: 200,
+      width: 300,
+      render: (content: string) => (
+        <div style={{
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          lineHeight: '1.5',
+          minHeight: '22px'
+        }}>
+          {content || '-'}
+        </div>
+      ),
     },
     {
       title: '参与人员',
