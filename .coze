@@ -7,5 +7,4 @@ build = ["pnpm", "install"]
 run = ["pnpm", "run", "dev"]
 
 [deploy]
-build = ["pnpm", "run", "deploy:install"]
 run = ["npx", "tsx", "server.ts"]
