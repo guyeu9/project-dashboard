@@ -94,11 +94,10 @@ export const checkTasksAndTriggerReminders = () => {
       console.log(`[Notification]     One day before: ${oneDayBefore.format('YYYY-MM-DD')}`)
       console.log(`[Notification]     Is same day: ${currentTime.startOf('day').isSame(oneDayBefore, 'day')}`)
       
-      // 检查是否已存在相同的通知
+      // 检查是否已存在相同的通知（无论状态如何，只检查是否已创建过）
       const existingNotification = notificationStore.notifications.find(
-        n => n.taskId === task.id && 
-            n.remindTime === remindTime &&
-            n.status === 'pending'
+        n => n.taskId === task.id &&
+            n.remindTime === remindTime
       )
       
       if (!existingNotification) {
@@ -132,11 +131,10 @@ export const checkTasksAndTriggerReminders = () => {
       console.log(`[Notification]     Within 5 minutes: ${Math.abs(diffMinutes) <= 5}`)
       console.log(`[Notification]     Is same day: ${currentTime.isSame(taskStartTimeDay, 'day')}`)
       
-      // 检查是否已存在相同的通知
+      // 检查是否已存在相同的通知（无论状态如何，只检查是否已创建过）
       const existingNotification = notificationStore.notifications.find(
-        n => n.taskId === task.id && 
-            n.remindTime === remindTime &&
-            n.status === 'pending'
+        n => n.taskId === task.id &&
+            n.remindTime === remindTime
       )
       
       if (!existingNotification) {
