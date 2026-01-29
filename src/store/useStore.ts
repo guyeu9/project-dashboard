@@ -236,6 +236,15 @@ const saveToServer = async (data: { projects: Project[]; tasks: Task[]; taskType
   const MAX_RETRIES = 3
   const RETRY_DELAY = 1000
   
+  console.log('[DEBUG] saveToServer called with:', {
+    projectsCount: data.projects.length,
+    tasksCount: data.tasks.length,
+    taskTypesCount: data.taskTypes.length,
+    pmosCount: data.pmos.length,
+    productManagersCount: data.productManagers.length,
+    historyRecordsCount: data.historyRecords.length,
+  })
+  
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await fetch(API_URL, {
@@ -493,6 +502,8 @@ const useStore = create<AppState>((set, get) => {
     setSelectedStatus: (status) => set({ selectedStatus: status }),
     
     addProject: (project) => {
+      console.log('[DEBUG] addProject called with project:', project.name)
+      
       // 先创建历史记录
       const historyRecord = {
         id: `history-${Date.now()}`,
@@ -502,11 +513,19 @@ const useStore = create<AppState>((set, get) => {
         operation: 'create',
         operator: 'admin',
         operatedAt: new Date().toISOString(),
+        changes: { created: project }, // 添加 changes 字段
         projectId: project.id
       }
+      
+      console.log('[DEBUG] Created history record:', historyRecord)
+      
       // 更新数据并保存（包含历史记录）
       const newHistoryRecords = [...get().historyRecords, historyRecord]
       const newProjects = [...get().projects, project]
+      
+      console.log('[DEBUG] New history records count:', newHistoryRecords.length)
+      console.log('[DEBUG] Current projects count:', get().projects.length, '->', newProjects.length)
+      
       const data = {
         projects: newProjects,
         tasks: get().tasks,
@@ -515,6 +534,9 @@ const useStore = create<AppState>((set, get) => {
         productManagers: get().productManagers,
         historyRecords: newHistoryRecords
       }
+      
+      console.log('[DEBUG] Saving data with history records:', data.historyRecords.length)
+      
       set({ projects: newProjects, historyRecords: newHistoryRecords })
       saveToServer(data)
     },
@@ -571,6 +593,7 @@ const useStore = create<AppState>((set, get) => {
         operation: 'create',
         operator: 'admin',
         operatedAt: new Date().toISOString(),
+        changes: { created: task }, // 添加 changes 字段
         projectId: task.projectId
       }
 
@@ -656,6 +679,7 @@ const useStore = create<AppState>((set, get) => {
         operation: 'delete',
         operator: 'admin',
         operatedAt: new Date().toISOString(),
+        changes: { deleted: task }, // 添加 changes 字段
         projectId: task.projectId
       }
 
@@ -687,6 +711,7 @@ const useStore = create<AppState>((set, get) => {
         operation: 'delete',
         operator: 'admin',
         operatedAt: new Date().toISOString(),
+        changes: { deleted: project }, // 添加 changes 字段
         projectId: projectId
       }
 

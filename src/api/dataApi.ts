@@ -28,6 +28,8 @@ export async function getAllData() {
         db.select().from(historyRecords as any).orderBy((historyRecords as any).operatedAt),
       ]);
 
+    console.log('[DEBUG] getAllData - History records count:', historyRecordsData.length);
+
     // 如果 taskTypes 为空，返回默认值
     const finalTaskTypes =
       taskTypesData.length > 0
@@ -180,8 +182,13 @@ export async function saveAllData(data: {
       }
 
       // 保存历史记录
+      console.log('[DEBUG] Saving history records, count:', data.historyRecords?.length || 0);
       if (data.historyRecords && data.historyRecords.length > 0) {
+        console.log('[DEBUG] History records sample:', data.historyRecords[0]);
         await tx.insert(historyRecords as any).values(data.historyRecords as any);
+        console.log('[DEBUG] History records saved successfully');
+      } else {
+        console.log('[DEBUG] No history records to save');
       }
     });
 
