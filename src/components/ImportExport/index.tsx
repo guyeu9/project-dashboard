@@ -10,7 +10,20 @@ import './index.css'
 const { Dragger } = Upload
 
 function ImportExport() {
-  const { projects, tasks, pmos, productManagers, setProjects, setTasks, setPMOs, setProductManagers } = useStore()
+  const {
+    projects,
+    tasks,
+    taskTypes,
+    pmos,
+    productManagers,
+    historyRecords,
+    setProjects,
+    setTasks,
+    setTaskTypes,
+    setPMOs,
+    setProductManagers,
+    setHistoryRecords
+  } = useStore()
   const { message } = AntApp.useApp()
   const [exportModalVisible, setExportModalVisible] = useState(false)
   const [exportFormat, setExportFormat] = useState<'excel' | 'json'>('excel')
@@ -18,13 +31,13 @@ function ImportExport() {
 
   const handleExportExcel = () => {
     setExportFormat('excel')
-    setExportData({ projects, tasks, pmos, productManagers })
+    setExportData({ projects, tasks, taskTypes, pmos, productManagers, historyRecords })
     setExportModalVisible(true)
   }
 
   const handleExportJSON = () => {
     setExportFormat('json')
-    setExportData({ projects, tasks, pmos, productManagers })
+    setExportData({ projects, tasks, taskTypes, pmos, productManagers, historyRecords })
     setExportModalVisible(true)
   }
 
@@ -198,6 +211,49 @@ function ImportExport() {
           XLSX.utils.book_append_sheet(workbook, projectSheet, safeSheetName)
         })
 
+        // 3. 任务类型配置页签
+        const taskTypesData = taskTypes.map(t => ({
+          'ID': t.id,
+          '名称': t.name,
+          '颜色': t.color,
+          '是否启用': t.enabled ? '是' : '否'
+        }))
+        const taskTypesSheet = XLSX.utils.json_to_sheet(taskTypesData)
+        XLSX.utils.book_append_sheet(workbook, taskTypesSheet, '任务类型配置')
+
+        // 4. PMO列表页签
+        const pmosData = pmos.map(p => ({
+          'ID': p.id,
+          '名称': p.name,
+          '是否启用': p.enabled ? '是' : '否'
+        }))
+        const pmosSheet = XLSX.utils.json_to_sheet(pmosData)
+        XLSX.utils.book_append_sheet(workbook, pmosSheet, 'PMO列表')
+
+        // 5. 产品经理列表页签
+        const productManagersData = productManagers.map(pm => ({
+          'ID': pm.id,
+          '名称': pm.name,
+          '是否启用': pm.enabled ? '是' : '否'
+        }))
+        const productManagersSheet = XLSX.utils.json_to_sheet(productManagersData)
+        XLSX.utils.book_append_sheet(workbook, productManagersSheet, '产品经理列表')
+
+        // 6. 历史记录页签
+        const historyData = historyRecords.map(h => ({
+          '记录ID': h.id,
+          '实体类型': h.entityType,
+          '实体ID': h.entityId,
+          '实体名称': h.entityName,
+          '操作': h.operation,
+          '操作人': h.operator,
+          '操作时间': dayjs(h.operatedAt).format('YYYY-MM-DD HH:mm:ss'),
+          '变更内容': JSON.stringify(h.changes),
+          '项目ID': h.projectId || '-'
+        }))
+        const historySheet = XLSX.utils.json_to_sheet(historyData)
+        XLSX.utils.book_append_sheet(workbook, historySheet, '历史记录')
+
         XLSX.writeFile(workbook, `项目排期详细报表-${dayjs().format('YYYY-MM-DD')}.xlsx`)
         message.success('Excel导出成功')
       } catch (error) {
@@ -229,33 +285,45 @@ function ImportExport() {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string)
-        
+
         let importCount = 0
-        
+
         if (data.projects && Array.isArray(data.projects)) {
           setProjects(data.projects)
           message.success(`成功导入 ${data.projects.length} 个项目`)
           importCount++
         }
-        
+
         if (data.tasks && Array.isArray(data.tasks)) {
           setTasks(data.tasks)
           message.success(`成功导入 ${data.tasks.length} 个任务`)
           importCount++
         }
-        
+
+        if (data.taskTypes && Array.isArray(data.taskTypes)) {
+          setTaskTypes(data.taskTypes)
+          message.success(`成功导入 ${data.taskTypes.length} 个任务类型`)
+          importCount++
+        }
+
         if (data.pmos && Array.isArray(data.pmos)) {
           setPMOs(data.pmos)
           message.success(`成功导入 ${data.pmos.length} 个PMO`)
           importCount++
         }
-        
+
         if (data.productManagers && Array.isArray(data.productManagers)) {
           setProductManagers(data.productManagers)
           message.success(`成功导入 ${data.productManagers.length} 个产品经理`)
           importCount++
         }
-        
+
+        if (data.historyRecords && Array.isArray(data.historyRecords)) {
+          setHistoryRecords(data.historyRecords)
+          message.success(`成功导入 ${data.historyRecords.length} 条历史记录`)
+          importCount++
+        }
+
         if (importCount === 0) {
           message.warning('未找到可导入的数据')
         }
@@ -359,8 +427,16 @@ function ImportExport() {
       >
         <div className="export-preview">
           <h4>导出格式：{exportFormat === 'excel' ? 'Excel (.xlsx)' : 'JSON (.json)'}</h4>
-          <h4>包含数据：{projects.length} 个项目，{tasks.length} 个任务，{pmos.length} 个PMO，{productManagers.length} 个产品经理</h4>
-          
+          <h4>
+            包含数据：
+            {projects.length} 个项目，
+            {tasks.length} 个任务，
+            {taskTypes.length} 个任务类型，
+            {pmos.length} 个PMO，
+            {productManagers.length} 个产品经理，
+            {historyRecords.length} 条历史记录
+          </h4>
+
           {exportFormat === 'excel' && (
             <div>
               <h5>预览项目列表：</h5>
@@ -374,21 +450,25 @@ function ImportExport() {
               />
             </div>
           )}
-          
+
           {exportFormat === 'json' && (
             <div>
               <h5>预览JSON数据：</h5>
               <div className="json-preview">
-                <pre>{JSON.stringify({ 
-                  projects: projects.slice(0, 2), 
+                <pre>{JSON.stringify({
+                  projects: projects.slice(0, 2),
                   tasks: tasks.slice(0, 2),
+                  taskTypes: taskTypes.slice(0, 2),
                   pmos: pmos.slice(0, 2),
                   productManagers: productManagers.slice(0, 2),
-                  _total: { 
-                    projects: projects.length, 
+                  historyRecords: historyRecords.slice(0, 2),
+                  _total: {
+                    projects: projects.length,
                     tasks: tasks.length,
+                    taskTypes: taskTypes.length,
                     pmos: pmos.length,
-                    productManagers: productManagers.length
+                    productManagers: productManagers.length,
+                    historyRecords: historyRecords.length
                   },
                   _info: "预览仅展示前2条数据"
                 }, null, 2)}</pre>

@@ -96,6 +96,7 @@ interface AppState {
   setTaskTypes: (taskTypes: TaskType[]) => void
   setPMOs: (pmos: PMO[]) => void
   setProductManagers: (productManagers: ProductManager[]) => void
+  setHistoryRecords: (historyRecords: HistoryRecord[]) => void
   setSelectedProjectId: (projectId: string | null) => void
   setSelectedStatus: (status: string[]) => void
   addProject: (project: Project) => void
@@ -496,6 +497,18 @@ const useStore = create<AppState>((set, get) => {
         historyRecords: newHistoryRecords
       }
       set({ productManagers, historyRecords: newHistoryRecords })
+      saveToServer(data)
+    },
+    setHistoryRecords: (historyRecords) => {
+      const data = {
+        projects: get().projects,
+        tasks: get().tasks,
+        taskTypes: get().taskTypes,
+        pmos: get().pmos,
+        productManagers: get().productManagers,
+        historyRecords
+      }
+      set({ historyRecords })
       saveToServer(data)
     },
     setSelectedProjectId: (projectId) => set({ selectedProjectId: projectId }),
