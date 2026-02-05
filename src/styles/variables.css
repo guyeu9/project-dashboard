@@ -65,6 +65,7 @@
   --gradient-green: linear-gradient(135deg, #00B578 0%, #36CFA9 100%);
   --gradient-purple: linear-gradient(135deg, #722ED1 0%, #B37FEB 100%);
   --gradient-orange: linear-gradient(135deg, #FA8C16 0%, #FFC069 100%);
+  --gradient-yellow: linear-gradient(135deg, #FADB14 0%, #FFF566 100%);
   --gradient-pink: linear-gradient(135deg, #EB2F96 0%, #FF85C0 100%);
   --gradient-primary: var(--gradient-blue);
   --gradient-success: var(--gradient-green);
@@ -73,4 +74,5 @@
   --gradient-warning: linear-gradient(135deg, #FA8C16 0%, #FFC069 100%);
   --gradient-delayed: var(--gradient-error); /* 延期默认为红色渐变 */
   --gradient-risk: var(--gradient-warning);  /* 风险默认为黄色/橙色渐变 */
+  --gradient-paused: var(--gradient-yellow); /* 暂停默认为黄色渐变 */
 }

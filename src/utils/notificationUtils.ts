@@ -43,34 +43,45 @@ export const checkTasksAndTriggerReminders = () => {
   const tasks = useStore.getState().tasks
   const notificationStore = useNotificationStore.getState()
   const projects = useStore.getState().projects
-  
+
   // 如果没有任务数据，跳过检查
   if (!tasks || tasks.length === 0) {
     console.log('[Notification] No tasks available, skipping reminder check')
     return
   }
-  
+
   // 如果没有项目数据，跳过检查
   if (!projects || projects.length === 0) {
     console.log('[Notification] No projects available, skipping reminder check')
     return
   }
-  
-  const currentTime = dayjs()
+
+  // 过滤掉已完成和暂停的项目
+  const activeProjects = projects.filter(p => p.status !== 'completed' && p.status !== 'paused')
+  const activeProjectIds = new Set(activeProjects.map(p => p.id))
+
+  // 只检查属于活跃项目的任务
+  const activeTasks = tasks.filter(task => activeProjectIds.has(task.projectId))
+
   console.log(`[Notification] =========================================`)
+  console.log(`[Notification] Total projects: ${projects.length}, Active projects: ${activeProjects.length}`)
+  console.log(`[Notification] Total tasks: ${tasks.length}, Active tasks: ${activeTasks.length}`)
+  console.log(`[Notification] Filtered out tasks from completed/paused projects`)
+
+  const currentTime = dayjs()
   console.log(`[Notification] Current time: ${currentTime.format('YYYY-MM-DD HH:mm:ss')}`)
   console.log(`[Notification] Current date: ${currentTime.startOf('day').format('YYYY-MM-DD')}`)
   console.log(`[Notification] Current hour: ${currentTime.hour()}, minute: ${currentTime.minute()}`)
-  console.log(`[Notification] Checking ${tasks.length} tasks for reminders...`)
+  console.log(`[Notification] Checking ${activeTasks.length} active tasks for reminders...`)
   console.log(`[Notification] =========================================`)
-  
+
   let newNotificationsCreated = 0
-  
-  tasks.forEach((task, index) => {
+
+  activeTasks.forEach((task, index) => {
     // 获取项目信息
-    const project = projects.find(p => p.id === task.projectId)
+    const project = activeProjects.find(p => p.id === task.projectId)
     if (!project) {
-      console.log(`[Notification] Task ${index + 1} (${task.name}) has no associated project, skipping`)
+      console.log(`[Notification] Task ${index + 1} (${task.name}) has no associated active project, skipping`)
       return
     }
     

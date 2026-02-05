@@ -85,7 +85,7 @@ function Dashboard() {
       {
         label: '已暂停',
         count: paused,
-        gradient: 'var(--gradient-orange)',
+        gradient: 'var(--gradient-yellow)',
         icon: <PauseCircleOutlined />,
         key: 'paused'
       },
