@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "serve:static": "npx tsx server.ts",
-    "start": "NODE_ENV=production npx tsx server.ts",
+    "start": "bash -c 'rm -rf dist && pnpm run build && NODE_ENV=production npx tsx server.ts'",
     "deploy:install": "pnpm install",
     "deploy:build": "pnpm run build",
     "pm2:start": "npx pm2 start ecosystem.config.js --env production",
