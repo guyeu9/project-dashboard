@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, Row, Col, Spin, Tag, Space } from 'antd'
-import { 
+import {
   ClockCircleOutlined,
   ProjectOutlined,
   CheckCircleOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  PauseCircleOutlined
 } from '@ant-design/icons'
 import { motion, AnimatePresence } from 'framer-motion'
 import useStore from '../../store/useStore'
@@ -27,15 +28,16 @@ function Dashboard() {
   // 计算各状态数量
   const metrics = useMemo(() => {
     const today = new Date().toISOString().split('T')[0]
-    
+
     // 过滤掉已完成的项目进行统计
     const activeProjects = projects.filter(p => p.status !== 'completed')
     const total = activeProjects.length
-    
+
     const normal = projects.filter(p => p.status === 'normal').length
     const risk = projects.filter(p => p.status === 'risk').length
     const delayed = projects.filter(p => p.status === 'delayed').length
-    
+    const paused = projects.filter(p => p.status === 'paused').length
+
     // 待开始逻辑
     const pendingProjects = projects.filter(p => {
       if (p.status === 'pending') return true
@@ -45,58 +47,74 @@ function Dashboard() {
     const pendingCount = pendingProjects.length
 
     return [
-      { 
-        label: '全部项目', 
-        count: total, 
+      {
+        label: '全部项目',
+        count: total,
         gradient: 'var(--gradient-blue)',
-        icon: <ProjectOutlined />, 
-        key: 'all' 
+        icon: <ProjectOutlined />,
+        key: 'all'
       },
-      { 
-        label: '待开始', 
-        count: pendingCount, 
+      {
+        label: '待开始',
+        count: pendingCount,
         gradient: 'var(--gradient-purple)',
-        icon: <ClockCircleOutlined />, 
-        key: 'pending' 
+        icon: <ClockCircleOutlined />,
+        key: 'pending'
       },
-      { 
-        label: '正常推进', 
-        count: normal, 
+      {
+        label: '正常推进',
+        count: normal,
         gradient: 'var(--gradient-green)',
-        icon: <CheckCircleOutlined />, 
-        key: 'normal' 
+        icon: <CheckCircleOutlined />,
+        key: 'normal'
       },
-      { 
-        label: '存在风险', 
-        count: risk, 
+      {
+        label: '存在风险',
+        count: risk,
         gradient: 'var(--gradient-warning)',
-        icon: <ExclamationCircleOutlined />, 
-        key: 'risk' 
+        icon: <ExclamationCircleOutlined />,
+        key: 'risk'
       },
-      { 
-        label: '已延期', 
-        count: delayed, 
+      {
+        label: '已延期',
+        count: delayed,
         gradient: 'var(--gradient-error)',
-        icon: <ClockCircleOutlined />, 
-        key: 'delayed' 
+        icon: <ClockCircleOutlined />,
+        key: 'delayed'
+      },
+      {
+        label: '已暂停',
+        count: paused,
+        gradient: 'var(--gradient-orange)',
+        icon: <PauseCircleOutlined />,
+        key: 'paused'
       },
     ]
   }, [projects])
 
   const filteredProjects = useMemo(() => {
     const today = new Date().toISOString().split('T')[0]
-    // 首先过滤掉暂停状态的项目
-    let result = projects.filter(p => p.status !== 'paused')
-    
-    if (selectedFilter === 'all') return result.filter(p => p.status !== 'completed')
+
+    if (selectedFilter === 'all') {
+      // 显示除了已完成的和暂停的项目
+      return projects.filter(p => p.status !== 'completed' && p.status !== 'paused')
+    }
+
     if (selectedFilter === 'pending') {
-      return result.filter(p => {
+      return projects.filter(p => {
         if (p.status === 'pending') return true
         if (!p.startDate) return true
         return p.startDate > today
       })
     }
-    return result.filter(p => p.status === selectedFilter)
+
+    if (selectedFilter === 'paused') {
+      // 显示暂停状态的项目
+      return projects.filter(p => p.status === 'paused')
+    }
+
+    // 其他状态直接过滤
+    return projects.filter(p => p.status === selectedFilter)
   }, [projects, selectedFilter])
 
   const handleFilterClick = (key: string) => {
