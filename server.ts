@@ -26,6 +26,67 @@ const RETRY_DELAY = 1000;
 console.log('[INFO] Server starting...');
 console.log('[INFO] distDir:', distDir);
 console.log('[INFO] NODE_ENV:', process.env.NODE_ENV);
+console.log('[INFO] Working directory:', process.cwd());
+
+// 验证 dist 目录是否存在且包含必要的文件
+const verifyDist = () => {
+  if (!fs.existsSync(distDir)) {
+    console.error('[ERROR] dist directory not found:', distDir);
+    return false;
+  }
+
+  const indexPath = path.join(distDir, "index.html");
+  if (!fs.existsSync(indexPath)) {
+    console.error('[ERROR] index.html not found:', indexPath);
+    return false;
+  }
+
+  const assetsDir = path.join(distDir, "assets");
+  if (!fs.existsSync(assetsDir)) {
+    console.error('[ERROR] assets directory not found:', assetsDir);
+    return false;
+  }
+
+  // 检查是否有至少一个 JS 文件
+  const jsFiles = fs.readdirSync(assetsDir).filter(f => f.endsWith('.js'));
+  if (jsFiles.length === 0) {
+    console.error('[ERROR] No JS files found in assets directory');
+    return false;
+  }
+
+  console.log('[INFO] dist directory verified, found', jsFiles.length, 'JS files');
+  console.log('[INFO] Latest JS file:', jsFiles[jsFiles.length - 1]);
+  return true;
+};
+
+// 如果 dist 目录不存在或不完整，尝试重新构建
+if (!verifyDist()) {
+  console.warn('[WARN] dist directory verification failed, attempting to rebuild...');
+  try {
+    console.log('[INFO] Running: pnpm run build');
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync('pnpm', ['run', 'build'], {
+      stdio: 'inherit',
+      cwd: __dirname
+    });
+
+    if (result.status !== 0) {
+      console.error('[ERROR] Build failed with status:', result.status);
+      process.exit(1);
+    }
+
+    console.log('[INFO] Build completed successfully');
+
+    // 再次验证
+    if (!verifyDist()) {
+      console.error('[ERROR] dist directory verification failed after rebuild');
+      process.exit(1);
+    }
+  } catch (error: any) {
+    console.error('[ERROR] Failed to rebuild:', error.message);
+    process.exit(1);
+  }
+}
 
 const getRequestBody = (req: http.IncomingMessage): Promise<string> =>
   new Promise((resolve) => {

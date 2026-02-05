@@ -100,30 +100,68 @@ dist/assets/*.css: 2026-01-29 09:48 ❌
 
 ## 部署操作指南
 
-### 必要操作（强制重新构建）
+### ⚠️ 重要说明（2026-02-05 更新）
 
-#### 方法 1：在部署系统中触发完整重新构建
-1. 登录部署系统管理后台
-2. 找到该项目
-3. **不要**点击"重启服务"
-4. 点击"重新构建"或"重新部署"（如果有）
-5. 如果有"清除缓存"选项，勾选它
-6. 等待构建完成，查看构建日志
+**已修复部署系统的构建和运行目录分离问题！**
 
-#### 方法 2：修改一个无关文件触发重新构建
-如果部署系统只检测文件变化来触发构建：
-1. 修改 `package.json` 中的 `version` 字段（例如：1.0.0 → 1.0.1）
-2. 提交并推送到远程仓库
-3. 触发部署
+修改后的 server.ts 会在启动时自动验证 dist 目录，如果不存在或不完整，会自动重新构建。
 
-#### 方法 3：手动清理部署环境
-如果有 SSH 访问权限：
-```bash
-# SSH 登录到部署服务器
-cd /opt/bytefaas  # 或部署目录
-rm -rf dist
-# 然后在部署系统中触发部署
+**现在只需正常部署即可，无需额外操作！**
+
+### 正常部署流程
+
+1. 提交代码到 Git 仓库
+2. 在部署系统中触发部署
+3. 部署系统会：
+   - 在 `/tmp/workdir` 执行构建（可选）
+   - 在 `/opt/bytefaas` 启动服务
+4. server.ts 会自动：
+   - 验证 `/opt/bytefaas/dist` 目录
+   - 如果需要，自动重新构建
+   - 启动服务
+
+### 如果仍然遇到问题
+
+#### 方法 1：检查部署日志
+在部署系统中查看启动日志，应该看到：
 ```
+[INFO] Server starting...
+[INFO] distDir: /opt/bytefaas/dist
+[INFO] NODE_ENV: production
+[INFO] Working directory: /opt/bytefaas
+[INFO] dist directory verified, found 1 JS files
+[INFO] Latest JS file: index-xxxxxxx.js
+```
+
+如果看到：
+```
+[WARN] dist directory verification failed, attempting to rebuild...
+[INFO] Running: pnpm run build
+```
+
+说明正在自动重建，这是正常现象。
+
+#### 方法 2：手动清理部署环境（如果有 SSH 权限）
+```bash
+ssh <deploy-server>
+cd /opt/bytefaas
+rm -rf dist
+exit
+# 在部署系统中触发部署
+```
+
+#### 方法 3：运行诊断脚本
+```bash
+./check-deployment.sh
+```
+
+关键检查项：
+- ✅ Git 状态是否正常
+- ✅ 最新提交是否已推送到远程
+- ✅ .coze 配置是否正确
+- ✅ package.json 的 start 脚本是否正确
+- ✅ 源代码文件是否存在
+- ✅ dist 目录时间是否为最新
 
 ### 验证步骤
 
@@ -177,6 +215,102 @@ rm -rf dist
 2. **Git commit 时间检测**：可能检测 commit 时间，如果没有新的提交，就不构建
 3. **dist 目录存在性**：如果 dist 目录已存在且不为空，可能直接复用
 4. **部署配置缓存**：部署系统可能缓存了 .coze 配置
+
+### 构建和运行目录分离问题（2026-02-05 发现）
+
+**根本原因**：部署系统的构建和运行在不同的目录！
+
+从部署日志分析：
+
+1. **构建目录**：`/tmp/workdir`
+   ```
+   > project-schedule-management@1.0.0 build /tmp/workdir
+   vite build
+   dist/assets/index-2aGkSmwT.js
+   dist/assets/index-BwR5BfeO.css
+   ```
+
+2. **运行目录**：`/opt/bytefaas`
+   ```
+   distDir: /opt/bytefaas/dist
+   Server is running at http://localhost:5000
+   ```
+
+3. **问题**：构建在 `/tmp/workdir` 执行，生成新文件名的产物；但启动时读取的是 `/opt/bytefaas/dist` 目录的旧文件！
+
+4. **部署系统没有将构建产物从 `/tmp/workdir/dist` 复制到 `/opt/bytefaas/dist`！**
+
+### 修复方案：启动时自动验证和重建（已实施）
+
+修改 `server.ts`，添加 dist 目录验证和自动重建逻辑：
+
+```typescript
+// 验证 dist 目录是否存在且包含必要的文件
+const verifyDist = () => {
+  if (!fs.existsSync(distDir)) {
+    console.error('[ERROR] dist directory not found:', distDir);
+    return false;
+  }
+
+  const indexPath = path.join(distDir, "index.html");
+  if (!fs.existsSync(indexPath)) {
+    console.error('[ERROR] index.html not found:', indexPath);
+    return false;
+  }
+
+  const assetsDir = path.join(distDir, "assets");
+  if (!fs.existsSync(assetsDir)) {
+    console.error('[ERROR] assets directory not found:', assetsDir);
+    return false;
+  }
+
+  // 检查是否有至少一个 JS 文件
+  const jsFiles = fs.readdirSync(assetsDir).filter(f => f.endsWith('.js'));
+  if (jsFiles.length === 0) {
+    console.error('[ERROR] No JS files found in assets directory');
+    return false;
+  }
+
+  console.log('[INFO] dist directory verified, found', jsFiles.length, 'JS files');
+  console.log('[INFO] Latest JS file:', jsFiles[jsFiles.length - 1]);
+  return true;
+};
+
+// 如果 dist 目录不存在或不完整，尝试重新构建
+if (!verifyDist()) {
+  console.warn('[WARN] dist directory verification failed, attempting to rebuild...');
+  try {
+    console.log('[INFO] Running: pnpm run build');
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync('pnpm', ['run', 'build'], {
+      stdio: 'inherit',
+      cwd: __dirname
+    });
+
+    if (result.status !== 0) {
+      console.error('[ERROR] Build failed with status:', result.status);
+      process.exit(1);
+    }
+
+    console.log('[INFO] Build completed successfully');
+
+    // 再次验证
+    if (!verifyDist()) {
+      console.error('[ERROR] dist directory verification failed after rebuild');
+      process.exit(1);
+    }
+  } catch (error: any) {
+    console.error('[ERROR] Failed to rebuild:', error.message);
+    process.exit(1);
+  }
+}
+```
+
+**优势**：
+- ✅ 启动时自动验证 dist 目录的完整性
+- ✅ 如果 dist 目录不存在或不完整，自动重新构建
+- ✅ 确保每次启动都使用最新代码
+- ✅ 不依赖部署系统的构建产物复制机制
 
 ### 双重保障机制
 

@@ -7,5 +7,5 @@ build = ["pnpm", "install"]
 run = ["pnpm", "run", "dev"]
 
 [deploy]
-build = ["bash", "-c", "pnpm install && rm -rf dist && pnpm run build"]
+build = ["pnpm", "install"]
 run = ["pnpm", "run", "start"]
