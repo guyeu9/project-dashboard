@@ -680,12 +680,15 @@ function SettingsPage() {
           </Button>
         }
       >
-        <div style={{ backgroundColor: '#f0f5ff', padding: '24px', borderRadius: '8px', textAlign: 'center' }}>
-          <div style={{ marginBottom: '12px', fontSize: '48px' }}>🔒</div>
-          <p style={{ margin: 0, fontSize: '16px', color: '#666' }}>AI 提示词已隐藏</p>
-          <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#999' }}>
-            点击右上角"编辑提示词"按钮，输入管理员密码后可查看和编辑
-          </p>
+        <div style={{ textAlign: 'center' }}>
+          <Button
+            type="primary"
+            onClick={handleOpenEditAIPrompt}
+            disabled={!isAdmin}
+            size="large"
+          >
+            编辑提示词
+          </Button>
         </div>
       </Card>
 
