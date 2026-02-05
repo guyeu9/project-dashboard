@@ -9,7 +9,7 @@ function SettingsPage() {
   const { message } = AntApp.useApp()
   const { role } = useAuthStore()
   const { taskTypes, setTaskTypes, pmos, setPMOs, productManagers, setProductManagers, clearAllData } = useStore()
-  const { systemPrompt, setSystemPrompt, providers, currentProviderId, addProvider, updateProvider, deleteProvider, setCurrentProvider, promptClickCount, incrementPromptClickCount } = useAIAnalysisStore()
+  const { systemPrompt, setSystemPrompt, providers, currentProviderId, addProvider, updateProvider, deleteProvider, setCurrentProvider } = useAIAnalysisStore()
 
   const isAdmin = role === 'admin'
 
@@ -30,7 +30,8 @@ function SettingsPage() {
   // AI 提示词编辑相关状态
   const [aiPromptModalVisible, setAiPromptModalVisible] = useState(false)
   const [aiPromptForm] = Form.useForm()
-  const [showFullPrompt, setShowFullPrompt] = useState(false)
+  const [aiPromptPasswordModalVisible, setAiPromptPasswordModalVisible] = useState(false)
+  const [aiPromptPassword, setAiPromptPassword] = useState('')
 
   // AI 服务提供商管理相关状态
   const [aiProviderModalVisible, setAiProviderModalVisible] = useState(false)
@@ -186,10 +187,21 @@ function SettingsPage() {
 
   // AI 提示词编辑相关函数
   const handleOpenEditAIPrompt = () => {
-    incrementPromptClickCount()
+    setAiPromptPasswordModalVisible(true)
+  }
+
+  const handleConfirmAIPromptPassword = () => {
+    if (aiPromptPassword !== 'admin123') {
+      message.error('密码错误，操作已取消')
+      setAiPromptPassword('')
+      return
+    }
+
     aiPromptForm.setFieldsValue({
       prompt: systemPrompt
     })
+    setAiPromptPasswordModalVisible(false)
+    setAiPromptPassword('')
     setAiPromptModalVisible(true)
   }
 
@@ -203,7 +215,6 @@ function SettingsPage() {
       message.success('AI提示词已更新')
       setAiPromptModalVisible(false)
       aiPromptForm.resetFields()
-      setShowFullPrompt(false)
     })
   }
 
@@ -669,29 +680,13 @@ function SettingsPage() {
           </Button>
         }
       >
-        {showFullPrompt || promptClickCount >= 3 ? (
-          <div style={{ backgroundColor: '#f0f5ff', padding: '16px', borderRadius: '8px', maxHeight: '300px', overflowY: 'auto' }}>
-            <pre style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>{systemPrompt}</pre>
-          </div>
-        ) : (
-          <div style={{ backgroundColor: '#f0f5ff', padding: '16px', borderRadius: '8px', maxHeight: '300px', overflowY: 'auto' }}>
-            <pre style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>
-              {systemPrompt.length > 100
-                ? `${systemPrompt.substring(0, 50)}...${' *'.repeat(Math.min(20, systemPrompt.length - 50))}`
-                : systemPrompt}
-            </pre>
-            <div style={{ marginTop: 12, textAlign: 'center' }}>
-              <Button
-                type="link"
-                size="small"
-                onClick={() => setShowFullPrompt(true)}
-                disabled={!isAdmin}
-              >
-                查看完整提示词
-              </Button>
-            </div>
-          </div>
-        )}
+        <div style={{ backgroundColor: '#f0f5ff', padding: '24px', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ marginBottom: '12px', fontSize: '48px' }}>🔒</div>
+          <p style={{ margin: 0, fontSize: '16px', color: '#666' }}>AI 提示词已隐藏</p>
+          <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#999' }}>
+            点击右上角"编辑提示词"按钮，输入管理员密码后可查看和编辑
+          </p>
+        </div>
       </Card>
 
       {/* AI 服务提供商管理卡片 */}
@@ -770,6 +765,32 @@ function SettingsPage() {
         />
       </Card>
 
+      {/* AI 提示词密码验证模态框 */}
+      <Modal
+        title="安全验证"
+        open={aiPromptPasswordModalVisible}
+        onOk={handleConfirmAIPromptPassword}
+        onCancel={() => {
+          setAiPromptPasswordModalVisible(false)
+          setAiPromptPassword('')
+        }}
+        okText="确认"
+        cancelText="取消"
+        width={400}
+      >
+        <div>
+          <p style={{ marginBottom: '12px' }}>请输入管理员密码以编辑 AI 提示词：</p>
+          <Input.Password
+            placeholder="请输入管理员密码"
+            value={aiPromptPassword}
+            onChange={(e) => setAiPromptPassword(e.target.value)}
+            onPressEnter={handleConfirmAIPromptPassword}
+            autoFocus
+          />
+        </div>
+      </Modal>
+
+      {/* 编辑 AI 提示词模态框 */}
       <Modal
         title="编辑 AI 提示词"
         open={aiPromptModalVisible}
@@ -777,7 +798,6 @@ function SettingsPage() {
         onCancel={() => {
           setAiPromptModalVisible(false)
           aiPromptForm.resetFields()
-          setShowFullPrompt(false)
         }}
         okText="保存"
         cancelText="取消"
@@ -801,23 +821,6 @@ function SettingsPage() {
             />
           </Form.Item>
         </Form>
-      </Modal>
-
-      {/* 查看完整提示词的模态框 */}
-      <Modal
-        title="查看完整提示词"
-        open={showFullPrompt}
-        onCancel={() => setShowFullPrompt(false)}
-        footer={[
-          <Button key="close" onClick={() => setShowFullPrompt(false)}>
-            关闭
-          </Button>
-        ]}
-        width={800}
-      >
-        <div style={{ backgroundColor: '#f0f5ff', padding: '16px', borderRadius: '8px', maxHeight: '400px', overflowY: 'auto' }}>
-          <pre style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>{systemPrompt}</pre>
-        </div>
       </Modal>
 
       {/* AI 服务提供商编辑/新增模态框 */}
