@@ -1082,7 +1082,7 @@ function SettingsPage() {
             <h5 style={{ color: '#ff4d4f', marginBottom: '12px' }}>安全验证</h5>
             <p style={{ marginBottom: '12px' }}>请输入管理员密码以确认此操作：</p>
             <Input.Password
-              placeholder="请输入密码（admin123）"
+              placeholder="请输入管理员密码"
               value={clearDataPassword}
               onChange={(e) => setClearDataPassword(e.target.value)}
               onPressEnter={handleConfirmClearData}
