@@ -25,6 +25,7 @@ function SettingsPage() {
   const [editingProductManagerId, setEditingProductManagerId] = useState<string | null>(null)
   const [productManagerForm] = Form.useForm()
   const [clearDataModalVisible, setClearDataModalVisible] = useState(false)
+  const [clearDataPassword, setClearDataPassword] = useState('')
 
   // AI 提示词编辑相关状态
   const [aiPromptModalVisible, setAiPromptModalVisible] = useState(false)
@@ -329,10 +330,18 @@ function SettingsPage() {
   }
 
   const handleConfirmClearData = () => {
+    // 验证密码
+    if (clearDataPassword !== 'admin123') {
+      message.error('密码错误，操作已取消')
+      setClearDataPassword('')
+      return
+    }
+
     try {
       clearAllData()
       message.success('所有数据已成功清空')
       setClearDataModalVisible(false)
+      setClearDataPassword('')
     } catch (error) {
       console.error('清空数据失败:', error)
       message.error('清空数据失败，请重试')
@@ -1048,7 +1057,10 @@ function SettingsPage() {
         title="确认清空所有数据"
         open={clearDataModalVisible}
         onOk={handleConfirmClearData}
-        onCancel={() => setClearDataModalVisible(false)}
+        onCancel={() => {
+          setClearDataModalVisible(false)
+          setClearDataPassword('')
+        }}
         okText="确认清空"
         cancelText="取消"
         okButtonProps={{ danger: true }}
@@ -1065,6 +1077,19 @@ function SettingsPage() {
           </ul>
           <p>仅会保留默认的任务类型。</p>
           <p className="strong">请确保您已导出所有重要数据！</p>
+
+          <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #f0f0f0' }}>
+            <h5 style={{ color: '#ff4d4f', marginBottom: '12px' }}>安全验证</h5>
+            <p style={{ marginBottom: '12px' }}>请输入管理员密码以确认此操作：</p>
+            <Input.Password
+              placeholder="请输入密码（admin123）"
+              value={clearDataPassword}
+              onChange={(e) => setClearDataPassword(e.target.value)}
+              onPressEnter={handleConfirmClearData}
+              autoFocus
+              style={{ width: '100%' }}
+            />
+          </div>
         </div>
       </Modal>
     </div>
