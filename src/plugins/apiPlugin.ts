@@ -108,9 +108,95 @@ export function apiPlugin() {
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ error: 'INTERNAL_SERVER_ERROR', message: '服务器内部错误', details: error.message }))
           }
-        } else {
-          next()
         }
+
+        // AI 配置 API
+        if (req.url?.startsWith('/api/ai/config')) {
+          res.setHeader('Access-Control-Allow-Origin', '*')
+          res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+          if (req.method === 'OPTIONS') {
+            res.statusCode = 204
+            res.end()
+            return
+          }
+
+          if (req.method === 'GET') {
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify([]))
+            return
+          }
+
+          if (req.method === 'POST') {
+            const chunks = []
+            req.on('data', chunk => chunks.push(chunk))
+            req.on('end', () => {
+              try {
+                const body = Buffer.concat(chunks).toString('utf-8')
+                const data = JSON.parse(body)
+                res.statusCode = 200
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify(data))
+              } catch (error) {
+                res.statusCode = 500
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ error: error.message }))
+              }
+            })
+            return
+          }
+
+          res.statusCode = 405
+          res.end('Method Not Allowed')
+          return
+        }
+
+        // AI 服务提供商 API
+        if (req.url?.startsWith('/api/ai/providers')) {
+          res.setHeader('Access-Control-Allow-Origin', '*')
+          res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+          if (req.method === 'OPTIONS') {
+            res.statusCode = 204
+            res.end()
+            return
+          }
+
+          if (req.method === 'GET') {
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify([]))
+            return
+          }
+
+          if (req.method === 'POST') {
+            const chunks = []
+            req.on('data', chunk => chunks.push(chunk))
+            req.on('end', () => {
+              try {
+                const body = Buffer.concat(chunks).toString('utf-8')
+                const data = JSON.parse(body)
+                res.statusCode = 200
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify(data))
+              } catch (error) {
+                res.statusCode = 500
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ error: error.message }))
+              }
+            })
+            return
+          }
+
+          res.statusCode = 405
+          res.end('Method Not Allowed')
+          return
+        }
+
+        next()
       })
     }
   }
