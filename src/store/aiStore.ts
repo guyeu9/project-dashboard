@@ -361,7 +361,7 @@ async function callGeminiAPI(userPrompt: string, systemPrompt: string, provider:
       ],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 2000,
+        maxOutputTokens: 8000,
         language: 'zh-CN'
       }
     }
@@ -610,7 +610,7 @@ async function callOpenAIAPI(userPrompt: string, systemPrompt: string, provider:
         }
       ],
       temperature: 0.7,
-      max_tokens: 2000
+      max_tokens: 8000
     }
 
     console.log('[OpenAI] Request URL:', `${provider.baseUrl}/v1/chat/completions`)
